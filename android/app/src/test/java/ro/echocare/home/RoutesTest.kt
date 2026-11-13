@@ -1,8 +1,11 @@
 package ro.echocare.home
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
+import ro.echocare.R
 import ro.echocare.auth.ROLES
+import ro.echocare.ui.Tone
 
 // seniors §8.2: which home each role gets.
 class RoutesTest {
@@ -18,5 +21,45 @@ class RoutesTest {
     fun everyRoleTheAppKnowsHasAHome() {
         // The medic and the caregiver share the list, each reading it as their own role.
         assertEquals(4, ROLES.map(::homeFor).toSet().size)
+    }
+
+    @Test
+    fun everyStateOfTheDataModelHasALabel() {
+        // 05 §1, in order.
+        val states = listOf(
+            "draft",
+            "submitted",
+            "accepted",
+            "active",
+            "refused",
+            "wrong_number",
+            "unreachable",
+            "withdrawn"
+        )
+        assertEquals(states, STATE_LABELS.keys.toList())
+        assertEquals(R.string.state_draft, STATE_LABELS["draft"])
+        assertEquals(states.size, STATE_LABELS.values.toSet().size)
+    }
+
+    @Test
+    fun aStateThisBuildDoesNotKnowHasNoLabel() {
+        assertNull(STATE_LABELS["paused"])
+    }
+
+    @Test
+    fun everyLabelledStateHasTheDashboardsColour() {
+        assertEquals(STATE_LABELS.keys, STATE_TONES.keys)
+        assertEquals(Tone.Verde, STATE_TONES["active"])
+        assertEquals(Tone.Galben, STATE_TONES["unreachable"])
+        assertEquals(Tone.Muted, STATE_TONES["withdrawn"])
+    }
+
+    @Test
+    fun everyCodeHasALabelAndATone() {
+        // 03 §8: green, yellow, red.
+        val codes = setOf("green", "yellow", "red")
+        assertEquals(codes, CODE_LABELS.keys)
+        assertEquals(codes, CODE_TONES.keys)
+        assertEquals(Tone.Rosu, CODE_TONES["red"])
     }
 }

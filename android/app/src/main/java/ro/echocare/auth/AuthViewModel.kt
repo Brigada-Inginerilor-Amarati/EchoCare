@@ -28,6 +28,7 @@ import retrofit2.HttpException
 import ro.echocare.EchoCareApi
 import ro.echocare.Me
 import ro.echocare.R
+import ro.echocare.home.Failure
 
 private const val SAVED_ROLE = "role"
 private const val TAG = "EchoCareAuth"
@@ -168,6 +169,14 @@ class AuthViewModel @Inject constructor(
 
     /** *Ieșire*. */
     fun signOut() = show(Screen.Landing)
+
+    /**
+     * A read after sign-in was refused as signed out or not registered (seniors §8.2): a grant
+     * revoked mid-session ends the session, with the not-registered text. Signed out, it opens the
+     * phone form rather than the landing, as a 401 from /profile does: this person was just signed in.
+     */
+    fun sessionEnded(failure: Failure) =
+        show(if (failure == Failure.NotRegistered) Screen.NotRegistered else Screen.Phone())
 
     private fun show(next: Screen) {
         when (next) {

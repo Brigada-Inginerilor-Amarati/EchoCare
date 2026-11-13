@@ -1,6 +1,8 @@
 package ro.echocare.home
 
 import kotlinx.serialization.Serializable
+import ro.echocare.R
+import ro.echocare.ui.Tone
 
 // The destinations of the signed-in app (seniors §8.2), as type-safe routes.
 
@@ -22,3 +24,47 @@ fun homeFor(role: String): Any = when (role) {
     "senior" -> OwnRoute
     else -> IncidentsRoute
 }
+
+/**
+ * The label of each enrollment state (05 §1). A state this build does not know has none and
+ * shows no label: the server may add one later (ADR-001 §2.3).
+ */
+val STATE_LABELS = mapOf(
+    "draft" to R.string.state_draft,
+    "submitted" to R.string.state_submitted,
+    "accepted" to R.string.state_accepted,
+    "active" to R.string.state_active,
+    "refused" to R.string.state_refused,
+    "wrong_number" to R.string.state_wrong_number,
+    "unreachable" to R.string.state_unreachable,
+    "withdrawn" to R.string.state_withdrawn
+)
+
+/** The colour of each state's chip, the same as on the dashboard (dashboard/src/utils/labels.ts). */
+val STATE_TONES = mapOf(
+    "draft" to Tone.Muted,
+    "submitted" to Tone.Link,
+    "accepted" to Tone.Link,
+    "active" to Tone.Verde,
+    "refused" to Tone.Galben,
+    "wrong_number" to Tone.Galben,
+    "unreachable" to Tone.Galben,
+    "withdrawn" to Tone.Muted
+)
+
+/**
+ * The label of each code (03 §8). A code this build does not know has none and shows no chip
+ * (ADR-001 §2.3).
+ */
+val CODE_LABELS = mapOf(
+    "green" to R.string.code_green,
+    "yellow" to R.string.code_yellow,
+    "red" to R.string.code_red
+)
+
+/** The colour of each code's chip and of a card's bar. */
+val CODE_TONES = mapOf(
+    "green" to Tone.Verde,
+    "yellow" to Tone.Galben,
+    "red" to Tone.Rosu
+)

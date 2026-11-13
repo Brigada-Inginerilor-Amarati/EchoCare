@@ -79,7 +79,8 @@ class MainActivity : ComponentActivity() {
                     is Screen.Home -> HomeNav(
                         screen,
                         onSwitchRole = vm::switchRole,
-                        onSignOut = vm::signOut
+                        onSignOut = vm::signOut,
+                        onSessionEnd = vm::sessionEnded
                     )
 
                     else -> Scaffold(

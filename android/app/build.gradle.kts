@@ -47,6 +47,9 @@ android {
             val apiUrl = localProps.getProperty("echocare.apiUrl")
                 ?: "https://echocare-api-staging.up.railway.app"
             buildConfigField("String", "API_URL", "\"$apiUrl\"")
+            // How often an open screen re-reads (06 §3). echocare.rereadSeconds=10 for a demo.
+            val reread = localProps.getProperty("echocare.rereadSeconds") ?: "30"
+            buildConfigField("int", "REREAD_SECONDS", reread)
             // echocare.realSms=true keeps Firebase's app verification on, for real numbers (auth-layer §9).
             val realSms = localProps.getProperty("echocare.realSms") == "true"
             buildConfigField("boolean", "REAL_SMS", "$realSms")
@@ -58,6 +61,7 @@ android {
                 "API_URL",
                 "\"https://echocare-api-prod.up.railway.app\""
             )
+            buildConfigField("int", "REREAD_SECONDS", "30")
             buildConfigField("boolean", "REAL_SMS", "true")
             optimization {
                 enable = true

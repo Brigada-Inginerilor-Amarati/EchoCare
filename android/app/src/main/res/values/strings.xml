@@ -53,6 +53,27 @@
     <string name="back">Înapoi</string>
 
     <string name="home_signed_in">%1$s, conectat ca %2$s</string>
+    <string name="menu">Meniu</string>
+
+    <!-- Homes (seniors §8.2) -->
+    <string name="medic_home">Pacienții mei</string>
+    <string name="caregiver_home">Seniorii mei</string>
+    <string name="no_seniors">Nu aveți niciun senior.</string>
+    <string name="state_draft">Ciornă</string>
+    <string name="state_submitted">Trimis la DAS</string>
+    <string name="state_accepted">Acceptat</string>
+    <string name="state_active">Activ</string>
+    <string name="state_refused">Refuzat</string>
+    <string name="state_wrong_number">Număr greșit</string>
+    <string name="state_unreachable">De negăsit</string>
+    <string name="state_withdrawn">Retras</string>
+    <string name="code_green">Cod verde</string>
+    <string name="code_yellow">Cod galben</string>
+    <string name="code_red">Cod roșu</string>
+    <string name="offline_banner">Fără conexiune</string>
+    <string name="no_connection">Fără conexiune.</string>
+    <string name="not_found">Nu a fost găsit.</string>
+    <string name="not_allowed">Nu aveți acces la această acțiune.</string>
 
     <!-- The dashboard's phone number tag and the dial button -->
     <string name="tag_landline">fix</string>

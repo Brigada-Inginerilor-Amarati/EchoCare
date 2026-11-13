@@ -1,17 +1,19 @@
 package ro.echocare.home
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
@@ -20,8 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import ro.echocare.R
 import ro.echocare.ROLE_LABELS
 import ro.echocare.auth.Screen
-import ro.echocare.ui.Kind
-import ro.echocare.ui.SnButton
+import ro.echocare.ui.SquareIconButton
 import ro.echocare.ui.theme.Palette
 
 /**
@@ -29,48 +30,72 @@ import ro.echocare.ui.theme.Palette
  * FastAPI's; this only picks screens (G3).
  */
 @Composable
-fun HomeNav(home: Screen.Home, onSwitchRole: () -> Unit, onSignOut: () -> Unit) {
+fun HomeNav(
+    home: Screen.Home,
+    onSwitchRole: () -> Unit,
+    onSignOut: () -> Unit,
+    onSessionEnd: (Failure) -> Unit
+) {
     // A new graph for a new role, so that role's home is the start destination.
     key(home.role) {
         val nav = rememberNavController()
-        NavHost(nav, startDestination = homeFor(home.role)) {
-            composable<SeniorsRoute> { RoleHome(home, onSwitchRole, onSignOut) }
-            composable<OwnRoute> { RoleHome(home, onSwitchRole, onSignOut) }
-            composable<IncidentsRoute> { RoleHome(home, onSwitchRole, onSignOut) }
+        val menu: @Composable () -> Unit = { HomeMenu(home.canSwitch, onSwitchRole, onSignOut) }
+        CompositionLocalProvider(LocalSignedIn provides home.displayName) {
+            NavHost(nav, startDestination = homeFor(home.role)) {
+                composable<SeniorsRoute> {
+                    SeniorsScreen(menu = menu, onOpen = {}, onSessionEnd = onSessionEnd)
+                }
+                composable<OwnRoute> { RoleHome(home, menu) }
+                composable<IncidentsRoute> { RoleHome(home, menu) }
+            }
         }
     }
 }
 
-// A placeholder: the screens of each role come later.
+// A placeholder: the screens of these roles come later.
 @Composable
-private fun RoleHome(home: Screen.Home, onSwitchRole: () -> Unit, onSignOut: () -> Unit) {
-    Scaffold(modifier = Modifier.fillMaxSize(), containerColor = Palette.Canvas) { innerPadding ->
-        Column(
-            Modifier.fillMaxSize().padding(innerPadding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
+private fun RoleHome(home: Screen.Home, menu: @Composable () -> Unit) {
+    val role = stringResource(ROLE_LABELS.getValue(home.role))
+    HomeScaffold(role, onBack = null, menu = menu) {
+        Message(stringResource(R.string.home_signed_in, home.displayName, role))
+    }
+}
+
+/** *Schimbă rolul*, when there are several roles, and *Ieșire* (auth-layer §8.2). */
+@Composable
+private fun HomeMenu(canSwitch: Boolean, onSwitchRole: () -> Unit, onSignOut: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    // The Box anchors the menu to the button
+    Box {
+        SquareIconButton(
+            painterResource(R.drawable.ic_more_vert),
+            stringResource(R.string.menu),
+            onClick = { open = true }
+        )
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            containerColor = Palette.Subtle,
+            border = BorderStroke(1.dp, Palette.Line)
         ) {
-            Text(
-                stringResource(
-                    R.string.home_signed_in,
-                    home.displayName,
-                    stringResource(ROLE_LABELS.getValue(home.role))
-                ),
-                color = Palette.Fg,
-                style = MaterialTheme.typography.bodyLarge
-            )
-            if (home.canSwitch) {
-                SnButton(
-                    stringResource(R.string.change_role),
-                    onSwitchRole,
-                    Modifier.fillMaxWidth()
-                )
+            if (canSwitch) {
+                MenuItem(stringResource(R.string.change_role)) {
+                    open = false
+                    onSwitchRole()
+                }
             }
-            SnButton(
-                stringResource(R.string.sign_out),
-                onSignOut,
-                Modifier.fillMaxWidth(),
-                kind = Kind.Outline
-            )
+            MenuItem(stringResource(R.string.sign_out)) {
+                open = false
+                onSignOut()
+            }
         }
     }
+}
+
+@Composable
+private fun MenuItem(text: String, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(text, color = Palette.Fg, style = MaterialTheme.typography.labelLarge) },
+        onClick = onClick
+    )
 }
