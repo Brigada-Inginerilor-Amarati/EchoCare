@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import ro.echocare.R
 import ro.echocare.ROLE_LABELS
 import ro.echocare.auth.Screen
@@ -43,16 +44,30 @@ fun HomeNav(
         CompositionLocalProvider(LocalSignedIn provides home.displayName) {
             NavHost(nav, startDestination = homeFor(home.role)) {
                 composable<SeniorsRoute> {
-                    SeniorsScreen(menu = menu, onOpen = {}, onSessionEnd = onSessionEnd)
+                    SeniorsScreen(
+                        menu = menu,
+                        onOpen = { nav.navigate(SeniorRoute(it.id)) },
+                        onSessionEnd = onSessionEnd
+                    )
                 }
-                composable<OwnRoute> { RoleHome(home, menu) }
+                composable<SeniorRoute> { entry ->
+                    SeniorScreen(
+                        id = entry.toRoute<SeniorRoute>().id,
+                        onBack = { nav.popBackStack() },
+                        menu = {},
+                        onSessionEnd = onSessionEnd
+                    )
+                }
+                composable<OwnRoute> {
+                    SeniorScreen(id = null, onBack = null, menu = menu, onSessionEnd = onSessionEnd)
+                }
                 composable<IncidentsRoute> { RoleHome(home, menu) }
             }
         }
     }
 }
 
-// A placeholder: the screens of these roles come later.
+// A placeholder: DAS's screens come later.
 @Composable
 private fun RoleHome(home: Screen.Home, menu: @Composable () -> Unit) {
     val role = stringResource(ROLE_LABELS.getValue(home.role))

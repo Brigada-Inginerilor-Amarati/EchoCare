@@ -10,6 +10,10 @@ import ro.echocare.ui.Tone
 @Serializable
 data class SeniorsRoute(val role: String)
 
+/** One senior's page. */
+@Serializable
+data class SeniorRoute(val id: String)
+
 /** The senior's home: their own page. */
 @Serializable
 data object OwnRoute
@@ -67,4 +71,25 @@ val CODE_TONES = mapOf(
     "green" to Tone.Verde,
     "yellow" to Tone.Galben,
     "red" to Tone.Rosu
+)
+
+/** What started each call (05 §1), as the dashboard names it. Unknown: shown as it is. */
+val TRIGGER_LABELS = mapOf(
+    "campaign" to R.string.trigger_campaign,
+    "watch" to R.string.trigger_watch,
+    "manual" to R.string.trigger_manual,
+    "welcome" to R.string.trigger_welcome
+)
+
+/** A call's state (05 §1), for a call with no final code yet. Unknown: shown as it is. */
+val CALL_STATE_LABELS = mapOf(
+    "queued" to R.string.call_queued,
+    "ringing" to R.string.call_ringing,
+    "in_progress" to R.string.call_in_progress,
+    "unanswered" to R.string.call_unanswered,
+    "failed" to R.string.call_failed,
+    "completed" to R.string.call_completed,
+    "handed_over" to R.string.call_handed_over,
+    "dropped" to R.string.call_dropped,
+    "canceled" to R.string.call_canceled
 )

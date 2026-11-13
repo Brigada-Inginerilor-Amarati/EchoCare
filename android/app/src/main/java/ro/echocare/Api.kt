@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 // An installed APK keeps talking to a newer API: ignore fields this build does not know (ADR-001 §2.3).
@@ -31,6 +32,61 @@ data class SeniorRow(
     val since: String? = null
 )
 
+// GET /seniors/{id} (seniors §3.3): the row, the address with its access details (G13), the
+// medic and the caregivers. The same for every role (seniors SE7).
+@Serializable
+data class SeniorPage(
+    val id: String,
+    @SerialName("full_name") val fullName: String,
+    @SerialName("form_of_address") val formOfAddress: String,
+    @SerialName("phone_e164") val phone: String,
+    @SerialName("phone_is_landline") val landline: Boolean,
+    @SerialName("enrollment_state") val state: String,
+    val code: String? = null,
+    val reason: String? = null,
+    val since: String? = null,
+    val street: String? = null,
+    @SerialName("street_number") val streetNumber: String? = null,
+    val block: String? = null,
+    val staircase: String? = null,
+    val floor: String? = null,
+    val apartment: String? = null,
+    @SerialName("intercom_code") val intercomCode: String? = null,
+    @SerialName("key_holder") val keyHolder: String? = null,
+    val landmark: String? = null,
+    @SerialName("call_window") val callWindow: String? = null,
+    val medic: Medic,
+    val caregivers: List<Caregiver> = emptyList(),
+    // One of her calls is ringing or live: the "call in progress" badge (UC-12). Null from an
+    // older API, which reads as no.
+    @SerialName("call_in_progress") val callInProgress: Boolean? = null
+)
+
+@Serializable
+data class Medic(@SerialName("display_name") val displayName: String, val practice: String? = null)
+
+@Serializable
+data class Caregiver(
+    @SerialName("user_id") val userId: String,
+    @SerialName("display_name") val displayName: String,
+    val relation: String? = null,
+    @SerialName("phone_e164") val phone: String
+)
+
+// One row of GET /seniors/{id}/calls (04 §1), newest first. What a caregiver may see: no turns,
+// no transcript (01 §6). [trigger] and [state] stay strings (ADR-001 §2.3).
+@Serializable
+data class CallRow(
+    val id: String,
+    val trigger: String,
+    val state: String,
+    @SerialName("due_at") val dueAt: String,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("ended_at") val endedAt: String? = null,
+    @SerialName("final_severity") val finalSeverity: String? = null,
+    val reason: String? = null
+)
+
 // The FastAPI contract (04-interfaces.md). One function per endpoint, added as features need them.
 interface EchoCareApi {
     @GET("profile")
@@ -39,4 +95,11 @@ interface EchoCareApi {
     /** The seniors the caller reaches as [role]; the server narrows the list (seniors SE6). */
     @GET("seniors")
     suspend fun seniors(@Query("role") role: String): List<SeniorRow>
+
+    @GET("seniors/{id}")
+    suspend fun senior(@Path("id") id: String): SeniorPage
+
+    /** The senior's calls, newest first, queued ones included (04 §1). */
+    @GET("seniors/{id}/calls")
+    suspend fun calls(@Path("id") id: String): List<CallRow>
 }

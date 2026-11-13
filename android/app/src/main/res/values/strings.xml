@@ -79,4 +79,36 @@
     <string name="tag_landline">fix</string>
     <string name="tag_mobile">mobil</string>
     <string name="call">Apelează</string>
+
+    <!-- One senior's page and her calls (seniors §8.2, UC-12) -->
+    <string name="label_phone">Telefon</string>
+    <string name="label_address">Adresă</string>
+    <string name="label_intercom">Interfon</string>
+    <string name="label_key_holder">Cheie de rezervă</string>
+    <string name="label_landmark">Reper orientare</string>
+    <string name="section_call_window">Interval pentru apel</string>
+    <string name="section_caregivers">Aparținători</string>
+    <string name="no_caregivers">Niciun aparținător.</string>
+    <string name="no_address">Fără adresă.</string>
+    <string name="address_block">bl. %1$s</string>
+    <string name="address_staircase">sc. %1$s</string>
+    <string name="address_floor">et. %1$s</string>
+    <string name="address_apartment">ap. %1$s</string>
+    <string name="section_recent_calls">Apeluri recente</string>
+    <string name="no_recent_calls">Niciun apel încă.</string>
+    <string name="recent_call_line">%1$s · %2$s</string>
+    <string name="call_live">Apel în curs</string>
+    <string name="trigger_campaign">Campanie</string>
+    <string name="trigger_watch">Ceas</string>
+    <string name="trigger_manual">Cerere „Sunați-mă”</string>
+    <string name="trigger_welcome">Apel de bun venit</string>
+    <string name="call_queued">în așteptare</string>
+    <string name="call_ringing">sună</string>
+    <string name="call_in_progress">în curs</string>
+    <string name="call_unanswered">nepreluat</string>
+    <string name="call_failed">eșuat</string>
+    <string name="call_completed">încheiat</string>
+    <string name="call_handed_over">transferat la DAS</string>
+    <string name="call_dropped">întrerupt</string>
+    <string name="call_canceled">anulat</string>
 </resources>
