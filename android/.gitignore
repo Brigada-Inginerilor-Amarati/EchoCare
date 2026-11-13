@@ -1,0 +1,10 @@
+.gradle/
+.kotlin/
+build/
+# signing key paths and passwords (ADR-001 §2.1), and the SDK path
+local.properties
+*.jks
+*.keystore
+captures/
+.idea/*
+!.idea/codeStyles/
