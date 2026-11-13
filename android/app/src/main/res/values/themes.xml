@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.EchoCare" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Dark, like the Compose theme, so the window behind the first frame is the canvas -->
+    <style name="Theme.EchoCare" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/canvas</item>
+    </style>
 </resources>

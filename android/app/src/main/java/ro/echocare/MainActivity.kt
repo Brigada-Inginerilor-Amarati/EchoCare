@@ -1,22 +1,28 @@
 package ro.echocare
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
@@ -45,6 +52,12 @@ import ro.echocare.auth.AuthViewModel
 import ro.echocare.auth.Landing
 import ro.echocare.auth.Screen
 import ro.echocare.auth.toE164
+import ro.echocare.ui.Kind
+import ro.echocare.ui.Rule
+import ro.echocare.ui.SnButton
+import ro.echocare.ui.SnTextField
+import ro.echocare.ui.theme.EchoCareTheme
+import ro.echocare.ui.theme.Palette
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -52,11 +65,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // One dark theme (spec 07 §2.1): light status and navigation icons whatever the system uses
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
+        )
         setContent {
             val vm: AuthViewModel = hiltViewModel()
-            MaterialTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+            EchoCareTheme {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    containerColor = Palette.Canvas
+                ) { innerPadding ->
                     if (vm.screen == Screen.Landing) {
                         Landing(vm::openSignIn, Modifier.padding(innerPadding))
                         return@Scaffold
@@ -85,7 +105,7 @@ class MainActivity : ComponentActivity() {
     ) {
         val attempt = vm.sending(phone)
 
-        // Late callbacks from an attempt replaced by a resend change nothing
+        // Late callbacks from an attempt left with Înapoi, or replaced by a resend, change nothing
         fun current() = attempt == vm.attempt
         val options = PhoneAuthOptions.newBuilder(auth)
             .setPhoneNumber(phone)
@@ -129,66 +149,115 @@ fun SignIn(
     onResend: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
-    ) {
-        val screen = vm.screen
-        // Before anyone is signed in, back returns to the landing page
-        val beforeSignIn =
-            screen is Screen.Phone || screen is Screen.Code || screen == Screen.NotRegistered
-        BackHandler(enabled = beforeSignIn, onBack = vm::backToLanding)
-        when (screen) {
-            // Shown by MainActivity, not here.
-            Screen.Landing -> {}
-            Screen.Loading -> CircularProgressIndicator(
-                Modifier.align(Alignment.CenterHorizontally)
-            )
-            is Screen.Phone -> PhoneForm(screen.error, onSendCode)
-            // Signed out already: the phone form, under the not-registered text (auth-layer §3.2).
-            Screen.NotRegistered -> PhoneForm(R.string.not_registered, onSendCode)
-            is Screen.Code -> CodeForm(screen.error, vm.canResend, vm::submitCode, onResend)
-            Screen.Unavailable -> {
-                ErrorText(R.string.unavailable)
-                Button(vm::loadMe, Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.retry))
-                }
-                Button(vm::signOut, Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.sign_out))
-                }
-            }
-            is Screen.PickRole -> {
-                Title(R.string.pick_role_title)
-                screen.roles.forEach { role ->
-                    Button({ vm.pickRole(role) }, Modifier.fillMaxWidth()) {
-                        Text(stringResource(ROLE_LABELS.getValue(role)))
+    Box(modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+        when (val screen = vm.screen) {
+            Screen.Loading -> CircularProgressIndicator(color = Palette.FgMuted)
+            else -> Panel {
+                // Before anyone is signed in, back returns to the landing page
+                val beforeSignIn =
+                    screen is Screen.Phone ||
+                        screen is Screen.Code ||
+                        screen == Screen.NotRegistered
+                BackHandler(enabled = beforeSignIn, onBack = vm::backToLanding)
+                when (screen) {
+                    is Screen.Phone -> PhoneForm(screen.error, onSendCode)
+                    // Signed out already: the phone form, under the not-registered text (auth-layer §3.2).
+                    Screen.NotRegistered -> PhoneForm(R.string.not_registered, onSendCode)
+                    is Screen.Code -> CodeForm(screen.error, vm.canResend, vm::submitCode, onResend)
+                    Screen.Unavailable -> {
+                        ErrorText(R.string.unavailable)
+                        SnButton(
+                            stringResource(R.string.retry),
+                            vm::loadMe,
+                            Modifier.fillMaxWidth(),
+                            kind = Kind.Link
+                        )
+                        SnButton(
+                            stringResource(R.string.sign_out),
+                            vm::signOut,
+                            Modifier.fillMaxWidth(),
+                            kind = Kind.Outline
+                        )
                     }
+                    is Screen.PickRole -> {
+                        Title(R.string.pick_role_title)
+                        screen.roles.forEach { role ->
+                            SnButton(
+                                stringResource(ROLE_LABELS.getValue(role)),
+                                { vm.pickRole(role) },
+                                Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                    // A placeholder: the screens of each role come later.
+                    is Screen.Home -> {
+                        Text(
+                            stringResource(
+                                R.string.home_signed_in,
+                                screen.displayName,
+                                stringResource(ROLE_LABELS.getValue(screen.role))
+                            ),
+                            color = Palette.Fg,
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        if (screen.canSwitch) {
+                            SnButton(
+                                stringResource(R.string.change_role),
+                                vm::switchRole,
+                                Modifier.fillMaxWidth()
+                            )
+                        }
+                        SnButton(
+                            stringResource(R.string.sign_out),
+                            vm::signOut,
+                            Modifier.fillMaxWidth(),
+                            kind = Kind.Outline
+                        )
+                    }
+                    // The landing is shown by MainActivity; Loading above.
+                    else -> {}
                 }
-            }
-            // A placeholder: the screens of each role come later.
-            is Screen.Home -> {
-                Text(
-                    stringResource(
-                        R.string.home_signed_in,
-                        screen.displayName,
-                        stringResource(ROLE_LABELS.getValue(screen.role))
+                if (beforeSignIn) {
+                    SnButton(
+                        stringResource(R.string.back),
+                        vm::backToLanding,
+                        Modifier.fillMaxWidth(),
+                        kind = Kind.Outline
                     )
-                )
-                if (screen.canSwitch) {
-                    Button(vm::switchRole, Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.change_role))
-                    }
-                }
-                Button(vm::signOut, Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.sign_out))
                 }
             }
         }
-        if (beforeSignIn) {
-            Button(vm::backToLanding, Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.back))
-            }
+    }
+}
+
+/** The dashboard's sign-in panel: the brand, a 2dp rule, then the step. */
+@Composable
+private fun Panel(content: @Composable () -> Unit) {
+    Column(
+        Modifier
+            .widthIn(max = 420.dp)
+            .fillMaxWidth()
+            .border(2.dp, Palette.Line)
+            .background(Palette.Subtle)
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painterResource(R.drawable.ic_brand),
+                contentDescription = null,
+                modifier = Modifier.size(32.dp)
+            )
+            Text(
+                stringResource(R.string.app_name).uppercase(),
+                style = MaterialTheme.typography.titleLarge
+            )
         }
+        Rule()
+        content()
     }
 }
 
@@ -202,7 +271,7 @@ private fun ErrorText(text: Int) {
     Text(
         stringResource(text),
         Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        color = MaterialTheme.colorScheme.error,
+        color = Palette.RosuFg,
         style = MaterialTheme.typography.bodyMedium
     )
 }
@@ -211,20 +280,15 @@ private fun ErrorText(text: Int) {
 private fun PhoneForm(error: Int?, onSendCode: (String) -> Unit) {
     var phone by rememberSaveable { mutableStateOf("") }
     Title(R.string.sign_in_title)
-    OutlinedTextField(
-        phone,
-        { phone = it },
-        Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.phone_label)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-        singleLine = true
-    )
+    SnTextField(phone, { phone = it }, stringResource(R.string.phone_label), KeyboardType.Phone)
     error?.let { ErrorText(it) }
-    Button(
+    SnButton(
+        stringResource(R.string.send_code),
         { onSendCode(toE164(phone)) },
         Modifier.fillMaxWidth(),
+        kind = Kind.Link,
         enabled = phone.isNotBlank()
-    ) { Text(stringResource(R.string.send_code)) }
+    )
 }
 
 @Composable
@@ -236,19 +300,25 @@ private fun CodeForm(
 ) {
     var code by rememberSaveable { mutableStateOf("") }
     Title(R.string.sign_in_title)
-    OutlinedTextField(
-        code,
-        { code = it },
-        Modifier.fillMaxWidth(),
-        label = { Text(stringResource(R.string.code_label)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        singleLine = true
+    SnTextField(
+        value = code,
+        onValueChange = { code = it },
+        label = stringResource(R.string.code_label),
+        keyboardType = KeyboardType.NumberPassword
     )
     error?.let { ErrorText(it) }
-    Button({ onConfirm(code) }, Modifier.fillMaxWidth(), enabled = code.isNotBlank()) {
-        Text(stringResource(R.string.confirm))
-    }
-    Button(onResend, Modifier.fillMaxWidth(), enabled = canResend) {
-        Text(stringResource(R.string.resend_code))
-    }
+    SnButton(
+        stringResource(R.string.confirm),
+        { onConfirm(code) },
+        Modifier.fillMaxWidth(),
+        kind = Kind.Success,
+        enabled = code.isNotBlank()
+    )
+    SnButton(
+        stringResource(R.string.resend_code),
+        onResend,
+        Modifier.fillMaxWidth(),
+        kind = Kind.Outline,
+        enabled = canResend
+    )
 }
