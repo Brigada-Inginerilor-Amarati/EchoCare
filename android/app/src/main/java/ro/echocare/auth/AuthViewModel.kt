@@ -1,9 +1,11 @@
 package ro.echocare.auth
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.FirebaseException
@@ -14,14 +16,20 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.io.IOException
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import retrofit2.HttpException
+import ro.echocare.EchoCareApi
+import ro.echocare.Me
 import ro.echocare.R
 
+private const val SAVED_ROLE = "role"
 private const val TAG = "EchoCareAuth"
 
 /**
@@ -34,15 +42,19 @@ private fun logFailure(step: String, e: FirebaseException) {
 }
 
 /**
- * Phone sign-in (auth-layer §8.2, UC-02). The Activity starts phone verification, because
- * PhoneAuthOptions needs an Activity, and passes the callbacks' results in here.
+ * Phone sign-in, then GET /profile (auth-layer §8.2, UC-02). The Activity starts phone
+ * verification, because PhoneAuthOptions needs an Activity, and passes the callbacks' results in here.
  */
 @HiltViewModel
-class AuthViewModel @Inject constructor(private val auth: FirebaseAuth) : ViewModel() {
-    // Firebase keeps the session across restarts: someone already signed in skips the phone step.
-    var screen by mutableStateOf<Screen>(
-        if (auth.currentUser != null) Screen.SignedIn else Screen.Phone()
-    )
+class AuthViewModel @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val api: EchoCareApi,
+    @ApplicationContext context: Context
+) : ViewModel() {
+    // The picked role survives a restart (auth-layer §8.2).
+    private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+
+    var screen by mutableStateOf<Screen>(Screen.Phone())
         private set
 
     /** *Retrimite codul* opens 30 seconds after a code is sent (auth-layer §8.2). */
@@ -63,7 +75,13 @@ class AuthViewModel @Inject constructor(private val auth: FirebaseAuth) : ViewMo
         private set
 
     private lateinit var verificationId: String
+    private lateinit var me: Me
     private var resendTimer: Job? = null
+
+    init {
+        // Firebase keeps the session across restarts: someone already signed in skips the phone step.
+        if (auth.currentUser != null) loadMe()
+    }
 
     /** Returns the new attempt, for the Activity to compare its callbacks against. */
     fun sending(phone: String): Int {
@@ -109,13 +127,48 @@ class AuthViewModel @Inject constructor(private val auth: FirebaseAuth) : ViewMo
                 screen = Screen.Code(if (wrong) R.string.wrong_code else R.string.unavailable)
                 return@launch
             }
-            screen = Screen.SignedIn
+            loadMe()
         }
     }
 
+    fun loadMe() {
+        screen = Screen.Loading
+        viewModelScope.launch {
+            show(
+                try {
+                    me = api.me()
+                    screenFor(me, prefs.getString(SAVED_ROLE, null))
+                } catch (e: HttpException) {
+                    screenFor(e.code())
+                } catch (e: IOException) {
+                    Screen.Unavailable
+                }
+            )
+        }
+    }
+
+    fun pickRole(role: String) {
+        prefs.edit { putString(SAVED_ROLE, role) }
+        show(Screen.Home(role, me.displayName, canSwitch = true))
+    }
+
+    /** *Schimbă rolul*: back to the picker, forgetting the saved role. */
+    fun switchRole() = show(screenFor(me, saved = null))
+
     /** *Ieșire*. */
-    fun signOut() {
-        auth.signOut()
-        screen = Screen.Phone()
+    fun signOut() = show(Screen.Phone())
+
+    private fun show(next: Screen) {
+        when (next) {
+            // auth-layer §3.2: not_registered and a second 401 sign out of Firebase.
+            is Screen.Phone, Screen.NotRegistered -> {
+                auth.signOut()
+                prefs.edit { remove(SAVED_ROLE) }
+            }
+            // A saved role that is no longer among the grants is dropped (auth-layer §8.2).
+            is Screen.PickRole -> prefs.edit { remove(SAVED_ROLE) }
+            else -> {}
+        }
+        screen = next
     }
 }

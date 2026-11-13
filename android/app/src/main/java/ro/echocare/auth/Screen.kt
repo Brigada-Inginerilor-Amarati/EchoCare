@@ -1,5 +1,10 @@
 package ro.echocare.auth
 
+import ro.echocare.Me
+
+/** The roles this build has screens for, in GET /profile's order (auth-layer §3.3). */
+val ROLES = listOf("das", "medic", "caregiver", "senior")
+
 /** What the sign-in flow shows (auth-layer §8.2). [error] is a string resource id. */
 sealed interface Screen {
     data class Phone(val error: Int? = null) : Screen
@@ -8,8 +13,37 @@ sealed interface Screen {
 
     data object Loading : Screen
 
-    /** Signed in. What the person may do is not looked up yet. */
-    data object SignedIn : Screen
+    data object NotRegistered : Screen
+
+    data object Unavailable : Screen
+
+    data class PickRole(val roles: List<String>) : Screen
+
+    data class Home(val role: String, val displayName: String, val canSwitch: Boolean) : Screen
+}
+
+/**
+ * The screen after GET /profile answers 200 (auth-layer §8.2). [saved] is the role picked earlier.
+ * Roles this build does not know are dropped (app/AGENTS.md: decode leniently); AL3 counts distinct roles.
+ */
+fun screenFor(me: Me, saved: String?): Screen {
+    val roles = me.grants.map { it.role }.filter { it in ROLES }.distinct()
+    return when {
+        roles.isEmpty() -> Screen.NotRegistered
+        roles.size == 1 -> Screen.Home(roles.single(), me.displayName, canSwitch = false)
+        saved != null && saved in roles -> Screen.Home(saved, me.displayName, canSwitch = true)
+        else -> Screen.PickRole(roles)
+    }
+}
+
+/**
+ * The screen after GET /profile fails with HTTP [status] (auth-layer §3.2). A 401 arrives only after the
+ * Authenticator's retry, so it means sign in again. /profile refuses with 403 only for `not_registered`.
+ */
+fun screenFor(status: Int): Screen = when (status) {
+    401 -> Screen.Phone()
+    403 -> Screen.NotRegistered
+    else -> Screen.Unavailable
 }
 
 /** What the person typed, as E.164 (auth-layer §7.1). The server normalizes again. */

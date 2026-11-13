@@ -59,7 +59,6 @@ class MainActivity : ComponentActivity() {
                         vm,
                         onSendCode = { sendCode(vm, it, null) },
                         onResend = { sendCode(vm, vm.phone, vm.resendToken) },
-                        signedInAs = auth.currentUser?.phoneNumber.orEmpty(),
                         // The keyboard must not cover the code field or its button
                         modifier = Modifier
                             .padding(innerPadding)
@@ -110,12 +109,18 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+private val ROLE_LABELS = mapOf(
+    "das" to R.string.role_das,
+    "medic" to R.string.role_medic,
+    "caregiver" to R.string.role_caregiver,
+    "senior" to R.string.role_senior
+)
+
 @Composable
 fun SignIn(
     vm: AuthViewModel,
     onSendCode: (String) -> Unit,
     onResend: () -> Unit,
-    signedInAs: String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -127,9 +132,40 @@ fun SignIn(
                 Modifier.align(Alignment.CenterHorizontally)
             )
             is Screen.Phone -> PhoneForm(screen.error, onSendCode)
+            // Signed out already: the phone form, under the not-registered text (auth-layer §3.2).
+            Screen.NotRegistered -> PhoneForm(R.string.not_registered, onSendCode)
             is Screen.Code -> CodeForm(screen.error, vm.canResend, vm::submitCode, onResend)
-            Screen.SignedIn -> {
-                Text(stringResource(R.string.signed_in_as, signedInAs))
+            Screen.Unavailable -> {
+                ErrorText(R.string.unavailable)
+                Button(vm::loadMe, Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.retry))
+                }
+                Button(vm::signOut, Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.sign_out))
+                }
+            }
+            is Screen.PickRole -> {
+                Title(R.string.pick_role_title)
+                screen.roles.forEach { role ->
+                    Button({ vm.pickRole(role) }, Modifier.fillMaxWidth()) {
+                        Text(stringResource(ROLE_LABELS.getValue(role)))
+                    }
+                }
+            }
+            // A placeholder: the screens of each role come later.
+            is Screen.Home -> {
+                Text(
+                    stringResource(
+                        R.string.home_signed_in,
+                        screen.displayName,
+                        stringResource(ROLE_LABELS.getValue(screen.role))
+                    )
+                )
+                if (screen.canSwitch) {
+                    Button(vm::switchRole, Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.change_role))
+                    }
+                }
                 Button(vm::signOut, Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.sign_out))
                 }
