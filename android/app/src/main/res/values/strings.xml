@@ -17,6 +17,13 @@
     <string name="too_many_attempts">Prea multe încercări. Încercați mai târziu.</string>
     <string name="retry">Reîncercați</string>
 
+    <!-- Landing, signed out -->
+    <string name="landing_sign_in">Intrați</string>
+    <string name="landing_title_start">Nimeni nu trebuie să observe</string>
+    <string name="landing_title_end">primul.</string>
+    <string name="landing_lead">Ceasul observă, agentul sună, un om preia doar când e nevoie.</string>
+    <string name="landing_accounts">Conturile le creează medicul de familie și DAS.</string>
+
     <string name="pick_role_title">Alegeți rolul</string>
     <string name="role_das">Dispecerat DAS</string>
     <string name="role_medic">Medic</string>
@@ -24,6 +31,7 @@
     <string name="role_senior">Senior</string>
     <string name="change_role">Schimbă rolul</string>
     <string name="sign_out">Ieșire</string>
+    <string name="back">Înapoi</string>
 
     <string name="home_signed_in">%1$s, conectat ca %2$s</string>
 </resources>

@@ -2,6 +2,7 @@ package ro.echocare
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import ro.echocare.auth.AuthViewModel
+import ro.echocare.auth.Landing
 import ro.echocare.auth.Screen
 import ro.echocare.auth.toE164
 
@@ -55,6 +57,10 @@ class MainActivity : ComponentActivity() {
             val vm: AuthViewModel = hiltViewModel()
             MaterialTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    if (vm.screen == Screen.Landing) {
+                        Landing(vm::openSignIn, Modifier.padding(innerPadding))
+                        return@Scaffold
+                    }
                     SignIn(
                         vm,
                         onSendCode = { sendCode(vm, it, null) },
@@ -127,7 +133,14 @@ fun SignIn(
         modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
-        when (val screen = vm.screen) {
+        val screen = vm.screen
+        // Before anyone is signed in, back returns to the landing page
+        val beforeSignIn =
+            screen is Screen.Phone || screen is Screen.Code || screen == Screen.NotRegistered
+        BackHandler(enabled = beforeSignIn, onBack = vm::backToLanding)
+        when (screen) {
+            // Shown by MainActivity, not here.
+            Screen.Landing -> {}
             Screen.Loading -> CircularProgressIndicator(
                 Modifier.align(Alignment.CenterHorizontally)
             )
@@ -169,6 +182,11 @@ fun SignIn(
                 Button(vm::signOut, Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.sign_out))
                 }
+            }
+        }
+        if (beforeSignIn) {
+            Button(vm::backToLanding, Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.back))
             }
         }
     }
