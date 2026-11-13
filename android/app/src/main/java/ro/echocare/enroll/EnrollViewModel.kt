@@ -3,8 +3,10 @@ package ro.echocare.enroll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.launch
@@ -12,19 +14,24 @@ import ro.echocare.Caregiver
 import ro.echocare.EchoCareApi
 import ro.echocare.SeniorPage
 import ro.echocare.home.Answer
+import ro.echocare.home.EnrollRoute
 import ro.echocare.home.Load
 import ro.echocare.home.after
 import ro.echocare.home.answer
 
-/** „Pacient nou”: the four steps of seniors §9.2. */
+/** „Pacient nou” and its edits: the four steps of seniors §9.2. */
 @HiltViewModel
-class EnrollViewModel @Inject constructor(private val api: EchoCareApi) : ViewModel() {
+class EnrollViewModel @Inject constructor(private val api: EchoCareApi, handle: SavedStateHandle) :
+    ViewModel() {
     /** The senior once saved. Null on a new form until step 1's „Continuă” creates them. */
-    var id by mutableStateOf<String?>(null)
+    var id by mutableStateOf(handle.toRoute<EnrollRoute>().id)
         private set
 
+    /** Opened on a saved senior: from a draft's card or „Editează” (seniors §9.1). */
+    val existing = id != null
+
     /** The form itself: reading a saved senior, ready, or stopped by a refusal (seniors §8.2). */
-    var form by mutableStateOf<Load<Unit>>(Load.Ready(Unit))
+    var form by mutableStateOf<Load<Unit>>(if (existing) Load.Loading else Load.Ready(Unit))
         private set
 
     var step by mutableStateOf(Step.Senior)
@@ -63,18 +70,18 @@ class EnrollViewModel @Inject constructor(private val api: EchoCareApi) : ViewMo
     var notice by mutableStateOf<Notice?>(null)
         private set
 
+    var submitted by mutableStateOf(false)
+        private set
+
     val draft get() = state == "draft"
 
-    /**
-     * „Reîncercați” after a refusal stopped the form: a saved senior is read into the form, at
-     * step 1; before the first save there is nothing to read, so the empty form returns.
-     */
+    init {
+        if (existing) open()
+    }
+
+    /** Reads the saved senior into the form, at step 1. Also „Reîncercați”. */
     fun open() {
-        val id = id
-        if (id == null) {
-            form = Load.Ready(Unit)
-            return
-        }
+        val id = id ?: return
         form = Load.Loading
         viewModelScope.launch {
             form = when (val read = answer { api.senior(id) }) {
@@ -129,6 +136,23 @@ class EnrollViewModel @Inject constructor(private val api: EchoCareApi) : ViewMo
         val id = id ?: return
         command(Action.Remove, { ensure(api.removeCaregiver(id, caregiver.userId)) }) {
             caregivers = caregivers.filter { it.userId != caregiver.userId }
+        }
+    }
+
+    /** „Trimite la DAS”: `draft` → `submitted`; the screen then returns to the home. */
+    fun submit() {
+        val id = id ?: return
+        command(Action.Submit, { api.submit(id) }) { submitted = true }
+    }
+
+    /**
+     * „Salvează semnătura” on step 4 (G7, UC-01 step 5). The summary is read again on success, so
+     * the pad gives way to the date; a refusal shows its line and the pad keeps the drawing.
+     */
+    fun sign(strokes: List<List<Point>>, width: Float, height: Float) {
+        val id = id ?: return
+        command(Action.Sign, { ensure(api.sign(id, signatureForm(strokes, width, height))) }) {
+            reread()
         }
     }
 

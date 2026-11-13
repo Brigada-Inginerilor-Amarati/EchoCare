@@ -49,11 +49,21 @@ class ApiTest {
         assertEquals("Str. Daliei" to "12", senior.street to senior.streetNumber)
         assertNull(senior.block)
         assertNull(senior.callInProgress)
+        assertNull(senior.signedAt)
         assertEquals(Medic("Dr. Ion Pop", practice = null), senior.medic)
         assertEquals(
             listOf(Caregiver("u1", "Ioana Pop", "fiică", "+40700000004")),
             senior.caregivers
         )
+    }
+
+    @Test
+    fun aSignedPageHasItsDate() {
+        val signed = page.replace(
+            "\"call_window\"",
+            "\"signed_at\": \"2026-10-05T08:00:00Z\", \"call_window\""
+        )
+        assertEquals("2026-10-05T08:00:00Z", json.decodeFromString<SeniorPage>(signed).signedAt)
     }
 
     @Test

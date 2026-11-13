@@ -14,9 +14,9 @@ data class SeniorsRoute(val role: String)
 @Serializable
 data class SeniorRoute(val id: String)
 
-/** „Pacient nou”: the medic's form (seniors §9.1). */
+/** „Pacient nou”: the medic's form, empty, or filled from the senior [id] (seniors §9.1). */
 @Serializable
-data object EnrollRoute
+data class EnrollRoute(val id: String? = null)
 
 /** The senior's home: their own page. */
 @Serializable

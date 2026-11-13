@@ -64,7 +64,9 @@ data class SeniorPage(
     val caregivers: List<Caregiver> = emptyList(),
     // One of her calls is ringing or live: the "call in progress" badge (UC-12). Null from an
     // older API, which reads as no.
-    @SerialName("call_in_progress") val callInProgress: Boolean? = null
+    @SerialName("call_in_progress") val callInProgress: Boolean? = null,
+    // When the consent was signed on the tablet (G7, 04 §1); null before, or from an older API.
+    @SerialName("signed_at") val signedAt: String? = null
 )
 
 @Serializable
@@ -104,6 +106,14 @@ data class CaregiverForm(
     @SerialName("display_name") val displayName: String,
     val relation: String,
     val phone: String
+)
+
+// POST /seniors/{id}/signature's body (04 §2): the consent text's version and the strokes of the
+// signature, each a list of [x, y] points.
+@Serializable
+data class SignatureForm(
+    @SerialName("text_version") val textVersion: String,
+    val strokes: List<List<List<Float>>>
 )
 
 // One row of GET /seniors/{id}/calls (04 §1), newest first. What a caregiver may see: no turns,
@@ -153,4 +163,12 @@ interface EchoCareApi {
         @Path("id") id: String,
         @Path("userId") userId: String
     ): Response<Unit>
+
+    /** `draft` → `submitted`: DAS sees the senior from now on (04 §2). Answers one row. */
+    @POST("seniors/{id}/submit")
+    suspend fun submit(@Path("id") id: String): SeniorRow
+
+    /** Stores the signed consent, 204 (04 §2). A Response, because a 204 has no body. */
+    @POST("seniors/{id}/signature")
+    suspend fun sign(@Path("id") id: String, @Body body: SignatureForm): Response<Unit>
 }

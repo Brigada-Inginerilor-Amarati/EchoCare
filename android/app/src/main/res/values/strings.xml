@@ -151,4 +151,19 @@
     <string name="last_caregiver">Un senior trimis la DAS are nevoie de cel puțin un aparținător.</string>
     <string name="field_invalid">Valoare invalidă.</string>
     <string name="too_long">Cel mult %1$d de caractere.</string>
+
+    <!-- "din" is "of", not a counted noun -->
+    <string name="submit">Trimite la DAS</string>
+
+    <!-- The medic's patient: commands, consent and transcripts (UC-04, UC-12, 04 §2) -->
+    <string name="edit_data">Editează datele</string>
+    <string name="consent_label">Consimțământ</string>
+
+    <!-- The signature under its consent text (G7, UC-01 step 5); the text matches SIGNATURE_CONSENT_TEXT, v1-semnatura -->
+    <string name="consent_signature_note">Opțional: consimțământul se confirmă și la apelul de bun venit.</string>
+    <string name="consent_signature_text">Vă vom suna în zilele cu vreme extremă sau când ceasul semnalează ceva neobișnuit. Ce spuneți în apel văd medicul de familie, familia și DAS. Puteți renunța oricând. Semnând mai jos, sunteți de acord.</string>
+    <string name="sign_here">Semnați aici</string>
+    <string name="clear_signature">Șterge</string>
+    <string name="save_signature">Salvează semnătura</string>
+    <string name="signed_on">Semnat · %1$s</string>
 </resources>

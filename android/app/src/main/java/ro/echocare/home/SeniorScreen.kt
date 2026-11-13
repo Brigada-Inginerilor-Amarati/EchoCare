@@ -28,6 +28,7 @@ import ro.echocare.ui.FieldRow
 import ro.echocare.ui.PhoneNumber
 import ro.echocare.ui.Rule
 import ro.echocare.ui.SectionLabel
+import ro.echocare.ui.SnButton
 import ro.echocare.ui.Tone
 import ro.echocare.ui.formatPhone
 import ro.echocare.ui.theme.Mono
@@ -35,7 +36,8 @@ import ro.echocare.ui.theme.Palette
 
 /**
  * One senior's page: everything GET /seniors/{id} returns, the same for every role (seniors SE7).
- * [id] is null on the senior's own home, which has the menu and no back arrow.
+ * [id] is null on the senior's own home, which has the menu and no back arrow. [onEdit] opens the
+ * medic's form (UC-01).
  */
 @Composable
 fun SeniorScreen(
@@ -43,6 +45,7 @@ fun SeniorScreen(
     onBack: (() -> Unit)?,
     menu: @Composable () -> Unit,
     onSessionEnd: (Failure) -> Unit,
+    onEdit: ((String) -> Unit)? = null,
     vm: SeniorViewModel = hiltViewModel()
 ) {
     val title = (vm.page as? Load.Ready)?.value?.formOfAddress ?: stringResource(R.string.app_name)
@@ -57,6 +60,13 @@ fun SeniorScreen(
                     .widthIn(max = 600.dp)
             ) {
                 SeniorDetails(senior, callSenior = id != null)
+                if (onEdit != null) {
+                    SnButton(
+                        stringResource(R.string.edit_data),
+                        { onEdit(senior.id) },
+                        Modifier.padding(top = 16.dp)
+                    )
+                }
                 // A senior's page opened from a list: a caregiver sees a short list (01 §6)
                 vm.calls?.let { CallList(R.string.section_recent_calls, recentCalls(it)) }
             }

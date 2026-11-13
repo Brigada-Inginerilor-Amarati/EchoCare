@@ -37,6 +37,7 @@ import ro.echocare.home.HomeScaffold
 import ro.echocare.home.Load
 import ro.echocare.home.LoadBody
 import ro.echocare.home.SeniorDetails
+import ro.echocare.home.showsConsent
 import ro.echocare.ui.Kind
 import ro.echocare.ui.Rule
 import ro.echocare.ui.SectionLabel
@@ -48,18 +49,22 @@ import ro.echocare.ui.theme.Palette
 
 /**
  * „Pacient nou”: the medic's four steps (seniors §9). Full screen on a phone and a tablet (SE20).
- * [onDone] opens the senior's page.
+ * [onSubmitted] returns to the home, [onDone] to the senior's page.
  */
 @Composable
 fun EnrollScreen(
     onLeave: () -> Unit,
+    onSubmitted: () -> Unit,
     onDone: (String) -> Unit,
     onSessionEnd: (Failure) -> Unit,
     vm: EnrollViewModel = hiltViewModel()
 ) {
     val back = { if (!vm.back()) onLeave() }
     BackHandler(onBack = back)
-    HomeScaffold(stringResource(R.string.new_patient), onBack = back, menu = {}) {
+    LaunchedEffect(vm.submitted) { if (vm.submitted) onSubmitted() }
+    val title = vm.saved[Field.FormOfAddress]?.takeIf { vm.existing && it.isNotBlank() }
+        ?: stringResource(R.string.new_patient)
+    HomeScaffold(title, onBack = back, menu = {}) {
         LoadBody(vm.form, onRetry = vm::open, onSessionEnd = onSessionEnd) {
             Steps(vm, onDone, onSessionEnd)
         }
@@ -209,11 +214,21 @@ private fun CaregiverRow(caregiver: Caregiver, enabled: Boolean, onRemove: () ->
     }
 }
 
-/** Step 4: the senior as GET seniors/{id} has them. */
+/** Step 4: the senior as GET seniors/{id} has them, and what submitting still needs. */
 @Composable
 private fun ReviewStep(vm: EnrollViewModel, onSessionEnd: (Failure) -> Unit) {
     LoadBody(vm.review, onRetry = vm::reread, onSessionEnd = onSessionEnd) { senior ->
-        SeniorDetails(senior, callSenior = false, calls = false)
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            // A refused submit names what is missing itself, over the buttons
+            val missing = missingOf(senior)
+            if (senior.state == "draft" && missing.isNotEmpty() && vm.notice !is Notice.Missing) {
+                NoticeLine(Notice.Missing(missing))
+            }
+            SeniorDetails(senior, callSenior = false, calls = false)
+            if (showsConsent(senior)) {
+                ConsentSection(senior.signedAt, vm.busy) { strokes, w, h -> vm.sign(strokes, w, h) }
+            }
+        }
     }
 }
 
@@ -231,7 +246,7 @@ private fun NoticeLine(notice: Notice) {
     Text(text, color = Palette.GalbenFg, style = MaterialTheme.typography.bodyLarge)
 }
 
-/** „Înapoi” from step 2 on, then „Continuă”, or on step 4 „Gata”. */
+/** „Înapoi” from step 2 on, then „Continuă”, or on step 4 „Trimite la DAS” or „Gata”. */
 @Composable
 private fun Buttons(vm: EnrollViewModel, onDone: (String) -> Unit) {
     FlowRow(
@@ -256,6 +271,15 @@ private fun Buttons(vm: EnrollViewModel, onDone: (String) -> Unit) {
             return@FlowRow
         }
         val senior = (vm.review as? Load.Ready)?.value ?: return@FlowRow
-        SnButton(stringResource(R.string.done), { onDone(senior.id) }, kind = Kind.Link)
+        if (senior.state == "draft") {
+            SnButton(
+                stringResource(R.string.submit),
+                vm::submit,
+                kind = Kind.Success,
+                enabled = !vm.busy && missingOf(senior).isEmpty() && vm.notice !is Notice.Missing
+            )
+        } else {
+            SnButton(stringResource(R.string.done), { onDone(senior.id) }, kind = Kind.Link)
+        }
     }
 }
