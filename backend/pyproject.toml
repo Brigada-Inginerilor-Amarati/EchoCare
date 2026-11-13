@@ -1,7 +1,129 @@
 [project]
-name = "backend"
+name = "echocare-backend"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.12"
-dependencies = []
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.20.0",
+    "asyncpg>=0.32.0",
+    "boto3>=1.40.61",
+    "fastapi>=0.143.0",
+    "firebase-admin>=7.7.0",
+    "httpx>=0.28.1",
+    "phonenumbers>=9.0.41",
+    "pydantic-ai-slim[openai]>=2.66.0",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.1.4",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+asyncio_mode = "auto"
+# One event loop for the whole run: app.db's module-level engine pools asyncpg
+# connections, which belong to the loop that opened them (auth-layer §6.2).
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "httpx2>=2.13.1",
+    "import-linter>=2.15",
+    "moto[s3]>=5.2.4",
+    "pydantic-evals>=2.66.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.16.10",
+]
+
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+# Wildcards, not lists, so a new package under app/, at any depth, is held to every
+# contract (spec §10). Empty __init__ files are checked in
+# tests/architecture/test_contracts.py: with as_packages = false, app.** would match
+# every module, not just the packages.
+
+[[tool.importlinter.contracts]]
+name = "Inside a feature: router, then service, then schemas, then models"
+type = "layers"
+containers = ["app.**"]
+layers = ["(router)", "(service)", "(schemas)", "(models)"]
+
+[[tool.importlinter.contracts]]
+name = "Only app.main imports a router"
+type = "protected"
+protected_modules = ["app.**.router"]
+allowed_importers = ["app.main"]
+
+[[tool.importlinter.contracts]]
+name = "Models and schemas import no web framework or HTTP client (01 §8)"
+type = "forbidden"
+source_modules = ["app.**.models", "app.**.schemas"]
+forbidden_modules = ["fastapi", "httpx"]
+
+[[tool.importlinter.contracts]]
+name = "The status engine is pure logic (01 §8)"
+type = "forbidden"
+source_modules = ["app.status"]
+# Every runtime dependency by import name, and pydantic, which fastapi brings.
+# tests/architecture/test_contracts.py fails when a new dependency is missing here.
+forbidden_modules = [
+    "alembic",
+    "asyncpg",
+    "boto3",
+    "fastapi",
+    "firebase_admin",
+    "httpx",
+    "openai",
+    "phonenumbers",
+    "pydantic",
+    "pydantic_ai",
+    "pydantic_settings",
+    "sqlalchemy",
+    "uvicorn",
+    "app.*",
+]
+
+[[tool.importlinter.contracts]]
+name = "app.models is for Alembic, scripts and tests, not for app/"
+type = "forbidden"
+source_modules = ["app.*"]
+forbidden_modules = ["app.models"]
+
+# Every package has a layer and imports only from layers below its own; `|` siblings may
+# not import each other. A new package fails until it is placed (ADR-005). Routers sit
+# above them all: they compose the packages.
+[[tool.importlinter.contracts]]
+name = "Packages sit in layers; a new package must be placed (ADR-005)"
+type = "layers"
+containers = ["app"]
+layers = [
+    "scheduler | notify",
+    "calls | agent | system | memory",
+    "campaigns",
+    "incidents",
+    "voice",
+    "seniors",
+    "auth | codes",
+    "core | status",
+]
+exhaustive = true
+exhaustive_ignores = ["main", "models"]
+ignore_imports = ["app.**.router -> app.**"]
+
+# The call session may leave the process first (ADR-004), so what it imports from voice
+# is that split's interface. No core: it holds no database session.
+[[tool.importlinter.contracts]]
+name = "The agent talks only to voice (ADR-004, ADR-005)"
+type = "forbidden"
+source_modules = ["app.agent"]
+forbidden_modules = ["app.*"]
+ignore_imports = [
+    "app.agent.** -> app.agent.**",
+    "app.agent.** -> app.voice.**",
+    "app.agent.** -> app.status.**",
+]
+allow_indirect_imports = true
+unmatched_ignore_imports_alerting = "none"
