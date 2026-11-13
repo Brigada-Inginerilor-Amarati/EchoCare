@@ -12,10 +12,11 @@ from sqlalchemy import func, select
 
 from app.campaigns.service import cancel_lapsed
 from app.core.db import Session, engine
+from app.medical.service import start_analyses
 from app.memory.service import start_summaries
 from app.scheduler.dialer import dial_due
 from app.scheduler.sweep import sweep
-from app.seniors.service import silence_watches
+from app.seniors.service import prune_watch_readings, silence_watches
 
 log = logging.getLogger("echocare.scheduler")
 
@@ -36,8 +37,13 @@ async def silence(now: datetime) -> int:
         return await silence_watches(session, now)
 
 
+async def prune(now: datetime) -> int:
+    async with Session() as session:
+        return await prune_watch_readings(session, now)
+
+
 async def tick(now: datetime | None = None) -> bool:
-    """One pass of the five steps at `now`; False when another copy holds the lock.
+    """One pass of the steps at `now`; False when another copy holds the lock.
 
     A step that raises is logged and the others still run.
     """
@@ -53,7 +59,9 @@ async def tick(now: datetime | None = None) -> bool:
                 ("dialed", dial_due),
                 ("swept", sweep),
                 ("silenced", silence),
+                ("pruned", prune),
                 ("summarized", start_summaries),
+                ("analyzed", start_analyses),
             ):
                 try:
                     counts[name] = await step(now)

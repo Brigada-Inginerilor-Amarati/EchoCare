@@ -41,6 +41,7 @@ def test_every_entity_has_a_table():
         "seniors",
         "consents",
         "watch_states",
+        "watch_readings",
         "senior_summaries",
         "events",
         "campaigns",
@@ -51,6 +52,7 @@ def test_every_entity_has_a_table():
         "senior_statuses",
         "incidents",
         "push_tokens",
+        "medical_records",
     }
 
 

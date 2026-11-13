@@ -25,6 +25,7 @@ from app.incidents.models import (
     IncidentOutcome,
     IncidentStatus,
 )
+from app.medical.models import MedicalRecord, MedicalRecordState
 from app.seniors.models import (
     Consent,
     ConsentDecision,
@@ -33,6 +34,7 @@ from app.seniors.models import (
     Senior,
     SummaryVersion,
     WatchCondition,
+    WatchReading,
     WatchState,
 )
 from app.voice.models import (
@@ -67,6 +69,8 @@ __all__ = [
     "IncidentEvent",
     "IncidentOutcome",
     "IncidentStatus",
+    "MedicalRecord",
+    "MedicalRecordState",
     "PushToken",
     "ReportSource",
     "Role",
@@ -80,6 +84,7 @@ __all__ = [
     "User",
     "WarningLevel",
     "WatchCondition",
+    "WatchReading",
     "WatchState",
     "WelcomeOutcome",
     "enum_type",

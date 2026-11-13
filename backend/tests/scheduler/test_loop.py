@@ -25,13 +25,15 @@ NOW = datetime(2026, 10, 24, 12, 0, tzinfo=UTC)
 
 
 def patch_steps(monkeypatch, **overrides):
-    """The tick's five steps, patched where the loop uses them."""
+    """The tick's six steps, patched where the loop uses them."""
     steps = {
         "cancel_lapsed": AsyncMock(),
         "dial_due": AsyncMock(return_value=0),
         "sweep": AsyncMock(return_value=0),
         "silence_watches": AsyncMock(return_value=0),
+        "prune_watch_readings": AsyncMock(return_value=0),
         "start_summaries": AsyncMock(return_value=0),
+        "start_analyses": AsyncMock(return_value=0),
         **overrides,
     }
     for name, step in steps.items():
@@ -57,12 +59,19 @@ async def test_a_step_that_raises_does_not_stop_the_others(db, monkeypatch):
     assert await tick(NOW) is True
     steps["sweep"].assert_awaited_once_with(NOW)
     steps["silence_watches"].assert_awaited_once()
+    steps["prune_watch_readings"].assert_awaited_once()
 
 
 async def test_the_tick_cancels_a_lapsed_campaigns_calls(
     db, add_user, add_active_senior, monkeypatch
 ):
-    for name in ("dial_due", "sweep", "silence_watches", "start_summaries"):
+    for name in (
+        "dial_due",
+        "sweep",
+        "silence_watches",
+        "start_summaries",
+        "start_analyses",
+    ):
         monkeypatch.setattr(f"app.scheduler.loop.{name}", AsyncMock(return_value=0))
     das = await add_user("+40700000001", Role.das)
     senior = await add_active_senior("+40700000101")
