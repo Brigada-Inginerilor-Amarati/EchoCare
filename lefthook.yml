@@ -1,0 +1,41 @@
+
+min_version: 2.2.0
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: backend
+      root: backend/
+      glob: "*.py"
+      group:
+        piped: true # fix, then format, then test: they touch the same files
+        jobs:
+          - run: uv run ruff check --fix {staged_files}
+            stage_fixed: true
+          - run: uv run ruff format {staged_files}
+            stage_fixed: true
+          - run: uv run lint-imports
+          - run: uv run pytest -q
+
+    - name: dashboard
+      root: dashboard/
+      glob: "*.{ts,js,json,css,html,svelte}"
+      group:
+        piped: true
+        jobs:
+          - run: npx --no vp check --fix
+            stage_fixed: true
+          - run: npx --no -- svelte-check --tsgo --fail-on-warnings
+
+    - name: android
+      root: android/
+      glob: "*.{kt,kts}"
+      run: ./gradlew -q ktlintFormat
+      stage_fixed: true
+
+pre-push:
+  jobs:
+    - name: android
+      root: android/
+      glob: "*.{kt,kts,xml,toml,properties,pro}"
+      run: ./gradlew ktlintCheck lint testDebugUnitTest :shared:test
