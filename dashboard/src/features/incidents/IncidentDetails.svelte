@@ -4,10 +4,12 @@
     fetchCalls,
     fetchIncident,
     fetchSenior,
+    resolveIncident,
     takeIncident,
     type CallSummary,
     type Incident,
     type IncidentDetail,
+    type IncidentOutcome,
     type SeniorView,
   } from "../../services/api";
   import CopyButton from "../../ui/CopyButton.svelte";
@@ -18,6 +20,7 @@
     CALL_STATES,
     callLength,
     clock,
+    OUTCOMES,
     time,
     TRIGGERS,
   } from "../../utils/labels";
@@ -46,6 +49,7 @@
     { key: "access", n: 1, label: "Urgență & acces" },
     { key: "transcript", n: 2, label: "Transcriere apel" },
     { key: "event", n: 3, label: "Eveniment" },
+    { key: "resolve", n: 4, label: "Rezolvare caz" },
   ];
 
   // Romanian labels for the stored values (05 §1); an unknown value shows as it is
@@ -66,6 +70,8 @@
   // All the senior's calls, to date the briefing's citations; `d.calls` holds only the incident's
   let seniorCalls = $state<Load<CallSummary[]>>({ kind: "loading" });
   let dialogEl: HTMLDialogElement | undefined = $state();
+  let outcome = $state<IncidentOutcome | "">("");
+  let note = $state("");
   let busy = $state(false);
   let error = $state<string | null>(null);
 
@@ -131,6 +137,7 @@
     command()
       .then((changed) => {
         onChanged(changed);
+        if (action === "take") tab = "resolve";
       })
       .catch((e: unknown) => {
         error = refusalMessage(e, action);
@@ -142,6 +149,14 @@
   }
 
   const take = () => send("take", () => takeIncident(incident.id));
+
+  const canFinish = $derived(outcome !== "" && note.trim() !== "");
+  function finish(e: SubmitEvent) {
+    e.preventDefault();
+    const chosen = outcome;
+    if (chosen === "" || !canFinish) return;
+    send("resolve", () => resolveIncident(incident.id, chosen, note.trim()));
+  }
 
   const at = (iso: string | null) => (iso ? time.format(Date.parse(iso)) : "—");
   const tel = (e164: string) => `tel:${e164}`;
@@ -425,6 +440,79 @@
               {:else}
                 {@render row("Locație", "Fără locație în eveniment")}
               {/if}
+            </div>
+          {/if}
+        {:else if tab === "resolve"}
+          {#if incident.status === "open"}
+            <div class="flex flex-col items-start gap-3 border border-line bg-canvas p-4">
+              <span>Preia cazul pentru a-l putea rezolva.</span>
+              <button
+                type="button"
+                class="sn-btn sn-btn-danger h-[34px] px-3.5"
+                disabled={busy}
+                onclick={take}
+              >
+                <Icon name="zap" size={13} stroke={2.2} />Preiau cazul
+              </button>
+            </div>
+          {:else if incident.status === "in_progress"}
+            <form class="flex flex-col gap-3.5" onsubmit={finish}>
+              <div class="sn-label" id="outcome-label">Rezultat</div>
+              <div
+                class="flex flex-col border border-line"
+                role="radiogroup"
+                aria-labelledby="outcome-label"
+              >
+                {#each OUTCOMES as o (o.value)}
+                  <label
+                    class={[
+                      "flex cursor-pointer items-center gap-2.5 border-b border-line px-3 py-[9px] last:border-b-0 hover:bg-card",
+                      outcome === o.value && "bg-link/12",
+                    ]}
+                  >
+                    <input
+                      type="radio"
+                      name="outcome"
+                      value={o.value}
+                      bind:group={outcome}
+                      class="peer sr-only"
+                    />
+                    <span
+                      class={[
+                        "size-3.5 flex-none border-2 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-link",
+                        outcome === o.value ? "border-link bg-link" : "border-line-strong",
+                      ]}
+                    ></span>
+                    {o.label}
+                    <span class="ml-auto font-mono text-[11px] text-fg-muted">{o.value}</span>
+                  </label>
+                {/each}
+              </div>
+              <label class="flex flex-col gap-1.5">
+                <span class="sn-label">Notă de rezolvare · obligatorie</span>
+                <textarea
+                  class="sn-input min-h-24 resize-y p-2.5 text-[13px] leading-normal"
+                  placeholder="Descrieți pe scurt măsurile luate…"
+                  maxlength={1000}
+                  bind:value={note}></textarea>
+              </label>
+              <button
+                class="sn-btn sn-btn-success h-10 w-full px-3.5 text-sm"
+                disabled={busy || !canFinish}
+              >
+                Finalizează și arhivează incidentul<Icon name="arrow-right" size={14} />
+              </button>
+            </form>
+          {:else}
+            {@const label = OUTCOMES.find((o) => o.value === d.outcome)?.label ?? d.outcome}
+            <div class="flex flex-col gap-2 border border-verde bg-verde/10 p-4">
+              <span class="flex items-center gap-2 font-extrabold text-verde-fg">
+                <Icon name="circle-check" size={15} />Incident arhivat · {label}
+              </span>
+              {#if d.note}<span class="text-fg-soft">{d.note}</span>{/if}
+              <span class="text-xs text-fg-muted">
+                Rezolvat de {d.resolved_by_name ?? "—"}, {at(d.resolved_at)}
+              </span>
             </div>
           {/if}
         {/if}
