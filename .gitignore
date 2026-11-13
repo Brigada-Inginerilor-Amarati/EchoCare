@@ -28,3 +28,6 @@ lefthook-local.yml
 
 # IDE settings opened at the repository root; android/.idea keeps its few shared files
 /.idea/
+
+
+/copy
