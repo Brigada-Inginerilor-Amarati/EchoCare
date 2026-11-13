@@ -27,7 +27,6 @@ android {
     }
 
     defaultConfig {
-        // The install identity, the same as :app's; the namespace above stays unique per module.
         applicationId = "ro.echocare"
         minSdk = 36
         targetSdk = 37
@@ -36,11 +35,15 @@ android {
     }
 
     buildTypes {
+        // 06 §3 timers in demo mode so the course jury doesn't wait 4 hours for inactivity
         debug {
             signingConfig = signingConfigs.getByName("shared")
+            val demo = localProps.getProperty("echocare.demo") != "false"
+            buildConfigField("boolean", "DEMO", "$demo")
         }
         release {
             signingConfig = signingConfigs.getByName("shared")
+            buildConfigField("boolean", "DEMO", "false")
             optimization {
                 enable = true
             }
@@ -53,16 +56,26 @@ android {
     useLibrary("wear-sdk")
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.wear.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling)
     implementation(libs.play.services.wearable)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(project(":shared"))
 }

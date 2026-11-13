@@ -1,29 +1,42 @@
 package ro.echocare.wear.presentation
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.wear.compose.material3.AppScaffold
-import androidx.wear.compose.material3.Text
-import ro.echocare.wear.R
+import ro.echocare.wear.monitoring.MonitoringService
 import ro.echocare.wear.presentation.theme.EchoCareTheme
 
-// The one screen of the skeleton. Pulse and step monitoring, and the watch's real screens, come later.
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
         super.onCreate(savedInstanceState)
+        // UC-09 §1: monitoring runs the whole time the app is open; the screen stays on for the demo
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Fall full-screen intent needs to wake the watch and show over the lock screen
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
         setContent {
             EchoCareTheme {
                 AppScaffold {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.app_name))
+                    val fall by MonitoringService.fallPrompt.collectAsState()
+                    val f = fall
+                    if (f != null) {
+                        AreYouOkScreen(
+                            fallId = f.id,
+                            measuredAt = f.measuredAt,
+                            type = f.type,
+                            snapshot = f.snapshot,
+                            onDone = {
+                                MonitoringService.fallPrompt.value = null
+                                MonitoringService.dismissFallNotification(this@MainActivity)
+                            }
+                        )
+                    } else {
+                        SeniorHomeScreen()
                     }
                 }
             }
