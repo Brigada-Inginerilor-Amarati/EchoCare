@@ -3,7 +3,12 @@ package ro.echocare
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -73,6 +78,34 @@ data class Caregiver(
     @SerialName("phone_e164") val phone: String
 )
 
+// POST /seniors and PUT /seniors/{id}'s body: the whole registration (seniors §3.5). No defaults,
+// so every field is sent, an empty one as null: PUT replaces every field.
+@Serializable
+data class SeniorForm(
+    @SerialName("full_name") val fullName: String,
+    @SerialName("form_of_address") val formOfAddress: String,
+    val phone: String,
+    @SerialName("call_window") val callWindow: String?,
+    val street: String?,
+    @SerialName("street_number") val streetNumber: String?,
+    val block: String?,
+    val staircase: String?,
+    val floor: String?,
+    val apartment: String?,
+    @SerialName("intercom_code") val intercomCode: String?,
+    @SerialName("key_holder") val keyHolder: String?,
+    val landmark: String?
+)
+
+// POST /seniors/{id}/caregivers's body (seniors §3.5). The phone must be a mobile: caregivers
+// sign in by SMS.
+@Serializable
+data class CaregiverForm(
+    @SerialName("display_name") val displayName: String,
+    val relation: String,
+    val phone: String
+)
+
 // One row of GET /seniors/{id}/calls (04 §1), newest first. What a caregiver may see: no turns,
 // no transcript (01 §6). [trigger] and [state] stay strings (ADR-001 §2.3).
 @Serializable
@@ -102,4 +135,22 @@ interface EchoCareApi {
     /** The senior's calls, newest first, queued ones included (04 §1). */
     @GET("seniors/{id}/calls")
     suspend fun calls(@Path("id") id: String): List<CallRow>
+
+    /** A new senior in `draft`, registered by the calling medic (04 §2). Not repeat-safe (SE14). */
+    @POST("seniors")
+    suspend fun createSenior(@Body body: SeniorForm): SeniorPage
+
+    /** The whole registration again, in any state (04 §2, SE9). */
+    @PUT("seniors/{id}")
+    suspend fun updateSenior(@Path("id") id: String, @Body body: SeniorForm): SeniorPage
+
+    @POST("seniors/{id}/caregivers")
+    suspend fun addCaregiver(@Path("id") id: String, @Body body: CaregiverForm): Caregiver
+
+    /** 204, also on a repeat (04 §2). A Response, because a 204 has no body to decode. */
+    @DELETE("seniors/{id}/caregivers/{userId}")
+    suspend fun removeCaregiver(
+        @Path("id") id: String,
+        @Path("userId") userId: String
+    ): Response<Unit>
 }

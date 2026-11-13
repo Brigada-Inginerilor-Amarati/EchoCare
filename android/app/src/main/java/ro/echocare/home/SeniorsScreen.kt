@@ -30,38 +30,53 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import ro.echocare.R
 import ro.echocare.SeniorRow
 import ro.echocare.ui.Chip
+import ro.echocare.ui.Kind
 import ro.echocare.ui.PhoneNumber
+import ro.echocare.ui.SnButton
 import ro.echocare.ui.Tone
 import ro.echocare.ui.theme.Palette
 
 /**
  * The seniors of the route's role as cards: the caregiver's home and, for now, the medic's too
- * (seniors §8.2, SE20).
+ * (seniors §8.2, SE20). [onNew] is the medic's „Pacient nou”, over the list (UC-01).
  */
 @Composable
 fun SeniorsScreen(
     menu: @Composable () -> Unit,
     onOpen: (SeniorRow) -> Unit,
     onSessionEnd: (Failure) -> Unit,
+    onNew: (() -> Unit)? = null,
     vm: SeniorsViewModel = hiltViewModel()
 ) {
     RereadWhileShown(vm::reread)
     val title = if (vm.role == "medic") R.string.medic_home else R.string.caregiver_home
     HomeScaffold(stringResource(title), onBack = null, menu = menu) {
-        LoadBody(vm.seniors, onRetry = vm::reread, onSessionEnd = onSessionEnd) { seniors ->
-            if (seniors.isEmpty()) {
-                Message(stringResource(R.string.no_seniors))
-            } else {
-                // One column on a phone, two or more on a tablet.
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 320.dp),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(seniors, key = { it.id }) { senior ->
-                        SeniorCard(senior, onClick = { onOpen(senior) })
+        Column(Modifier.fillMaxSize()) {
+            if (onNew != null) {
+                SnButton(
+                    stringResource(R.string.new_patient),
+                    onNew,
+                    Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp),
+                    kind = Kind.Link
+                )
+            }
+            Box(Modifier.weight(1f)) {
+                LoadBody(vm.seniors, onRetry = vm::reread, onSessionEnd = onSessionEnd) { seniors ->
+                    if (seniors.isEmpty()) {
+                        Message(stringResource(R.string.no_seniors))
+                    } else {
+                        // One column on a phone, two or more on a tablet.
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(minSize = 320.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(seniors, key = { it.id }) { senior ->
+                                SeniorCard(senior, onClick = { onOpen(senior) })
+                            }
+                        }
                     }
                 }
             }

@@ -23,6 +23,7 @@ import androidx.navigation.toRoute
 import ro.echocare.R
 import ro.echocare.ROLE_LABELS
 import ro.echocare.auth.Screen
+import ro.echocare.enroll.EnrollScreen
 import ro.echocare.ui.SquareIconButton
 import ro.echocare.ui.theme.Palette
 
@@ -47,7 +48,9 @@ fun HomeNav(
                     SeniorsScreen(
                         menu = menu,
                         onOpen = { nav.navigate(SeniorRoute(it.id)) },
-                        onSessionEnd = onSessionEnd
+                        onSessionEnd = onSessionEnd,
+                        // Only the medic registers seniors (04 §2)
+                        onNew = if (home.role == "medic") ({ nav.navigate(EnrollRoute) }) else null
                     )
                 }
                 composable<SeniorRoute> { entry ->
@@ -55,6 +58,18 @@ fun HomeNav(
                         id = entry.toRoute<SeniorRoute>().id,
                         onBack = { nav.popBackStack() },
                         menu = {},
+                        onSessionEnd = onSessionEnd
+                    )
+                }
+                composable<EnrollRoute> {
+                    EnrollScreen(
+                        // Popping by route makes a second tap a no-op, never the list popped too
+                        onLeave = { nav.popBackStack<EnrollRoute>(inclusive = true) },
+                        onDone = { id ->
+                            nav.navigate(SeniorRoute(id)) {
+                                popUpTo<EnrollRoute> { inclusive = true }
+                            }
+                        },
                         onSessionEnd = onSessionEnd
                     )
                 }

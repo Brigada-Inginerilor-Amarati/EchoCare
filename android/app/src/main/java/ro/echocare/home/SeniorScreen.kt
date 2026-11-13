@@ -66,11 +66,11 @@ fun SeniorScreen(
 
 /**
  * One senior, laid out like the dashboard's dossier: labelled rows, 1dp between rows, 2dp under a
- * group. [callSenior] is false on the senior's own page, since they do not need a button to call
- * themselves.
+ * group. The page and the form's step 4 show it. [callSenior] is false on the senior's own page,
+ * since they do not need a button to call themselves; [calls] false hides every call button.
  */
 @Composable
-fun SeniorDetails(senior: SeniorPage, callSenior: Boolean) {
+fun SeniorDetails(senior: SeniorPage, callSenior: Boolean, calls: Boolean = true) {
     Column {
         Column(
             Modifier
@@ -87,7 +87,7 @@ fun SeniorDetails(senior: SeniorPage, callSenior: Boolean) {
 
         FieldRow(
             stringResource(R.string.label_phone),
-            action = if (callSenior) ({ CallButton(senior.phone) }) else null
+            action = if (calls && callSenior) ({ CallButton(senior.phone) }) else null
         ) {
             PhoneNumber(senior.phone, senior.landline)
         }
@@ -144,7 +144,7 @@ fun SeniorDetails(senior: SeniorPage, callSenior: Boolean) {
                         )
                         Text(formatPhone(c.phone), style = Mono, color = Palette.FgSoft)
                     }
-                    CallButton(c.phone)
+                    if (calls) CallButton(c.phone)
                 }
                 Rule(strong = i == senior.caregivers.lastIndex)
             }
