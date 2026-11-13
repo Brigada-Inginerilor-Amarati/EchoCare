@@ -1,56 +1,76 @@
-# sv
+# dashboard: the DAS web dashboard
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+The dispatch team's view (spec G15): a Svelte 5 + SvelteKit 3 single-page app ([ADR-003](../docs/adr/ADR-003-dashboard-svelte.md)) that calls the FastAPI JSON API and signs people in with Firebase phone sign-in. On Railway it is the `dashboard` service: Node builds it and Caddy serves the result, both in this folder's [Dockerfile](Dockerfile).
 
-## Creating a project
+## Run it
 
-If you're seeing this, you've probably already done this step. Congrats!
+**In Docker, with the rest of the stack** (from the repository root). Vite reloads on save:
 
-```sh
-# create a new project
-npx sv create my-app
+```bash
+docker compose up --watch
 ```
 
-To recreate this project with the same configuration:
+**On the host**, with the API still in Compose. From `dashboard/`:
 
-```sh
-# recreate this project
-npx sv@1.3.0 create --template minimal --types ts --install npm dashboard
+```bash
+npm ci
 ```
 
-## Adding features
-
-Add features to your project with `sv add`:
-
-```sh
-npx sv add
-```
-
-For example, to add Tailwind CSS:
-
-```sh
-npx sv add tailwindcss
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+```bash
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+Either way it is at http://localhost:5173.
 
-To create a production version of your app:
+## Configuration
 
-```sh
+Vite writes `VITE_*` variables into the bundle **at build time**, so a change needs a rebuild, not a restart. Locally they come from `dashboard/.env`:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Value |
+|---|---|
+| `VITE_API_URL` | `http://localhost:8000` locally. It is read by the browser, so it is never Compose's service name `api` |
+| `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_APP_ID` | Firebase console → Project settings → Your apps → the web app. Public identifiers, not secrets |
+
+The same Firebase values are set for staging and production in [.railway/railway.ts](../.railway/railway.ts).
+
+**Firebase phone sign-in works only on authorized domains** (Firebase console → Authentication → Settings → Authorized domains). Add each Railway dashboard domain there. Firebase's docs say `localhost` is not allowed for phone sign-in; if reCAPTCHA fails locally, add `127.0.0.1` and open http://127.0.0.1:5173. Use the Firebase test phone numbers for development, so no real SMS is sent. The dev server sets `appVerificationDisabledForTesting` (`src/services/firebase.ts`), so test numbers sign in without a reCAPTCHA challenge; real numbers then fail with `auth/captcha-check-failed` (MALFORMED), and the production build never sets it. To sign in with a real number and a real SMS on the dev server, set `VITE_REAL_SMS=true` in `dashboard/.env` and restart the dashboard; the reCAPTCHA then runs for real, and since Firebase rejects it from `localhost` (`auth/invalid-app-credential`), the dev server then sends `localhost` to http://127.0.0.1:5173 (`src/services/firebase.ts`).
+
+## Build and check
+
+The toolchain is [Vite+](https://viteplus.dev/guide) and [svelte-check](https://svelte.dev/docs/kit/packaging): `npm run check` runs both `vp check` (oxfmt, oxlint, type check) and `svelte-check --tsgo --fail-on-warnings`. `--fix` applies the formatting and the safe lint fixes. CI runs it, then the build ([dashboard.yml](../.github/workflows/dashboard.yml)):
+
+```bash
+npm run check
+```
+
+```bash
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
+```bash
+npm run preview
+```
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## The production image
+
+The last stage of the Dockerfile is the one Railway builds: Caddy serving `dist/` on `$PORT` (3000 when unset). Keep that stage last. The `dev` stage exists only for Compose. To try the production image locally, from the repository root:
+
+```bash
+docker build -t echocare-dashboard --build-arg VITE_API_URL=http://localhost:8000 dashboard
+```
+
+```bash
+docker run --rm -p 3000:3000 echocare-dashboard
+```
+
+The [Caddyfile](Caddyfile) sends every unknown path to `index.html`, so a reload on a route works. It caches hashed files under `/_app/immutable/` for a year and revalidates `index.html` on every load, so a deploy shows at once.
+
+Logs from a deployment:
+
+```bash
+railway logs -s dashboard -e staging
+```
