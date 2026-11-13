@@ -1,12 +1,17 @@
 package ro.echocare
 
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import java.io.IOException
+import java.util.concurrent.ExecutionException
 import javax.inject.Singleton
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
@@ -32,13 +37,41 @@ object FirebaseModule {
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-    // ponytail: Retrofit is built here, not provided, until a second API needs it.
+    // ponytail: OkHttp and Retrofit are built here, not provided, until a second API needs them.
     @Provides
     @Singleton
-    fun echoCareApi(): EchoCareApi = Retrofit.Builder()
-        // Every FastAPI route is under /api; API_URL is the bare origin. Retrofit requires the trailing slash.
-        .baseUrl(BuildConfig.API_URL + "/api/")
-        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-        .build()
-        .create()
+    fun echoCareApi(auth: FirebaseAuth): EchoCareApi {
+        val client = OkHttpClient.Builder()
+            // The Firebase token goes in one interceptor (app/AGENTS.md). Runs on OkHttp's thread.
+            .addInterceptor { chain ->
+                val user = auth.currentUser ?: return@addInterceptor chain.proceed(chain.request())
+                chain.proceed(
+                    chain.request().newBuilder().header("Authorization", user.bearer(false)).build()
+                )
+            }
+            // A 401 retries once with a forced-fresh token; a second 401 reaches the caller (auth-layer §3.2).
+            .authenticator { _, response ->
+                val user = auth.currentUser
+                if (response.priorResponse != null || user == null) {
+                    null
+                } else {
+                    response.request.newBuilder().header("Authorization", user.bearer(true)).build()
+                }
+            }
+            .build()
+        return Retrofit.Builder()
+            // Every FastAPI route is under /api; API_URL is the bare origin. Retrofit requires the trailing slash.
+            .baseUrl(BuildConfig.API_URL + "/api/")
+            .client(client)
+            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+            .build()
+            .create()
+    }
+
+    // OkHttp turns only an IOException into a failed call; anything else crashes its thread.
+    private fun FirebaseUser.bearer(forceRefresh: Boolean): String = try {
+        "Bearer " + Tasks.await(getIdToken(forceRefresh)).token
+    } catch (e: ExecutionException) {
+        throw IOException("Firebase token unavailable", e)
+    }
 }
