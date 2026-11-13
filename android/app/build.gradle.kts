@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.google.services)
 }
 
 // Keystore paths and passwords, and the optional API override, stay out of Git (ADR-001 §2.1, §2.2).
@@ -46,6 +47,9 @@ android {
             val apiUrl = localProps.getProperty("echocare.apiUrl")
                 ?: "https://echocare-api-staging.up.railway.app"
             buildConfigField("String", "API_URL", "\"$apiUrl\"")
+            // echocare.realSms=true keeps Firebase's app verification on, for real numbers (auth-layer §9).
+            val realSms = localProps.getProperty("echocare.realSms") == "true"
+            buildConfigField("boolean", "REAL_SMS", "$realSms")
         }
         release {
             signingConfig = signingConfigs.getByName("shared")
@@ -54,6 +58,7 @@ android {
                 "API_URL",
                 "\"https://echocare-api-prod.up.railway.app\""
             )
+            buildConfigField("boolean", "REAL_SMS", "true")
             optimization {
                 enable = true
             }
@@ -79,8 +84,12 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     testImplementation(libs.junit)
     implementation(project(":shared"))
 }

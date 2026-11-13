@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "171353703999",
+    "project_id": "echocare-app",
+    "storage_bucket": "echocare-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:171353703999:android:58807f78889bd9a5391a8a",
+        "android_client_info": {
+          "package_name": "ro.echocare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAa45Im2-qXJhFgPDAMMn4nTy1TUBz3yrc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

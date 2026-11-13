@@ -1,8 +1,6 @@
-// shortcut: one module so far, and ktlint names such a file after it; the Firebase module joins it next.
-@file:Suppress("ktlint:standard:filename")
-
 package ro.echocare
 
+import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -12,6 +10,24 @@ import okhttp3.MediaType.Companion.toMediaType
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
+
+@Module
+@InstallIn(SingletonComponent::class)
+object FirebaseModule {
+    @Provides
+    @Singleton
+    fun firebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance().apply {
+        // Affects only Firebase's test numbers: emulators sign in before the SHA fingerprints
+        // are registered (auth-layer §8.2, §9 step 1). Real numbers need verification on, so
+        // echocare.realSms=true in local.properties leaves it on in a debug build, which then
+        // verifies with the web reCAPTCHA: Play Integrity refused it with 17028 on an emulator.
+        if (!BuildConfig.REAL_SMS) {
+            firebaseAuthSettings.setAppVerificationDisabledForTesting(true)
+        } else if (BuildConfig.DEBUG) {
+            firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
+        }
+    }
+}
 
 @Module
 @InstallIn(SingletonComponent::class)

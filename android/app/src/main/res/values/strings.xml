@@ -4,4 +4,20 @@
     <string name="api_checking">API …</string>
     <string name="api_ok">API ok (%1$s)</string>
     <string name="api_unreachable">API unreachable: %1$s</string>
+
+    <!-- Sign-in (auth-layer §8.2) -->
+    <string name="sign_in_title">Intrați în cont</string>
+    <string name="phone_label">Număr de telefon</string>
+    <string name="send_code">Trimite codul</string>
+    <string name="code_label">Codul primit prin SMS</string>
+    <string name="confirm">Confirmă</string>
+    <string name="resend_code">Retrimite codul</string>
+    <string name="wrong_code">Cod greșit.</string>
+    <string name="unavailable">Autentificarea nu este disponibilă acum. Încercați din nou.</string>
+    <!-- The dashboard's copy for the same Firebase errors (auth-layer §7.1) -->
+    <string name="invalid_phone">Număr de telefon invalid.</string>
+    <string name="too_many_attempts">Prea multe încercări. Încercați mai târziu.</string>
+
+    <string name="signed_in_as">Conectat ca %1$s</string>
+    <string name="sign_out">Ieșire</string>
 </resources>
