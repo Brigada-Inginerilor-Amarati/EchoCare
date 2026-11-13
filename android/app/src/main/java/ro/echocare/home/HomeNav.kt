@@ -23,8 +23,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import ro.echocare.R
-import ro.echocare.ROLE_LABELS
 import ro.echocare.auth.Screen
+import ro.echocare.das.IncidentScreen
+import ro.echocare.das.IncidentsScreen
+import ro.echocare.das.ResolveScreen
 import ro.echocare.enroll.EnrollScreen
 import ro.echocare.ui.SquareIconButton
 import ro.echocare.ui.theme.Palette
@@ -85,18 +87,31 @@ fun HomeNav(
                 composable<OwnRoute> {
                     SeniorScreen(id = null, onBack = null, menu = menu, onSessionEnd = onSessionEnd)
                 }
-                composable<IncidentsRoute> { RoleHome(home, menu) }
+                composable<IncidentsRoute> {
+                    IncidentsScreen(
+                        menu = menu,
+                        onOpen = { nav.navigate(IncidentRoute(it)) },
+                        onSessionEnd = onSessionEnd
+                    )
+                }
+                composable<IncidentRoute> {
+                    IncidentScreen(
+                        // By route, as EnrollRoute: a second tap never pops the home
+                        onBack = { nav.popBackStack<IncidentRoute>(inclusive = true) },
+                        onResolve = { nav.navigate(ResolveRoute(it)) },
+                        onSessionEnd = onSessionEnd
+                    )
+                }
+                composable<ResolveRoute> {
+                    ResolveScreen(
+                        onBack = { nav.popBackStack<ResolveRoute>(inclusive = true) },
+                        // Resolved incidents leave the list: back to it, past the incident's page
+                        onDone = { nav.popBackStack<IncidentsRoute>(inclusive = false) },
+                        onSessionEnd = onSessionEnd
+                    )
+                }
             }
         }
-    }
-}
-
-// A placeholder: DAS's screens come later.
-@Composable
-private fun RoleHome(home: Screen.Home, menu: @Composable () -> Unit) {
-    val role = stringResource(ROLE_LABELS.getValue(home.role))
-    HomeScaffold(role, onBack = null, menu = menu) {
-        Message(stringResource(R.string.home_signed_in, home.displayName, role))
     }
 }
 

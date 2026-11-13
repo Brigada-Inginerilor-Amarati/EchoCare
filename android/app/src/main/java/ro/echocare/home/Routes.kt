@@ -26,6 +26,14 @@ data object OwnRoute
 @Serializable
 data object IncidentsRoute
 
+/** One incident's page (UC-11). */
+@Serializable
+data class IncidentRoute(val id: String)
+
+/** „Rezolvare caz” for the incident [id] (UC-11 step 4). */
+@Serializable
+data class ResolveRoute(val id: String)
+
 /** Where [role] lands after sign-in. [role] is one of auth.ROLES. */
 fun homeFor(role: String): Any = when (role) {
     "medic", "caregiver" -> SeniorsRoute(role)
@@ -96,4 +104,13 @@ val CALL_STATE_LABELS = mapOf(
     "handed_over" to R.string.call_handed_over,
     "dropped" to R.string.call_dropped,
     "canceled" to R.string.call_canceled
+)
+
+/** The event behind an incident (05 §1), as the dashboard names it. Unknown: shown as it is. */
+val EVENT_LABELS = mapOf(
+    "sos_button" to R.string.event_sos_button,
+    "fall" to R.string.event_fall,
+    "high_pulse_at_rest" to R.string.event_high_pulse_at_rest,
+    "inactivity" to R.string.event_inactivity,
+    "manual_request" to R.string.event_manual_request
 )
