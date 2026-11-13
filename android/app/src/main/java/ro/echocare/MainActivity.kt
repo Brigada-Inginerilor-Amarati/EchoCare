@@ -15,19 +15,24 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import dagger.hilt.android.AndroidEntryPoint
 import java.io.IOException
+import javax.inject.Inject
 import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 
 // The skeleton's one screen: does this build reach the API it was built for? Replaced by sign-in later.
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var api: EchoCareApi
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MaterialTheme {
                 // null while the call is out
-                val result by produceState<Result<String>?>(null) { value = checkApi() }
+                val result by produceState<Result<String>?>(null) { value = checkApi(api) }
                 val status = result?.fold(
                     { stringResource(R.string.api_ok, it) },
                     { stringResource(R.string.api_unreachable, it.message.orEmpty()) }
@@ -47,8 +52,8 @@ class MainActivity : ComponentActivity() {
 
 // The server's environment name, or why it did not answer. Cancellation is not caught, so a left
 // screen stops the call.
-private suspend fun checkApi(): Result<String> = try {
-    Result.success(echoCareApi.health().env)
+private suspend fun checkApi(api: EchoCareApi): Result<String> = try {
+    Result.success(api.health().env)
 } catch (e: HttpException) {
     Result.failure(IOException("HTTP ${e.code()}"))
 } catch (e: IOException) {

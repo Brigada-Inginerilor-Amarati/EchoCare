@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp)
 }
 
 // Keystore paths and passwords, and the optional API override, stay out of Git (ADR-001 §2.1, §2.2).
@@ -77,6 +79,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     implementation(project(":shared"))
 }
