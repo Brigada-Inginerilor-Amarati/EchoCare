@@ -52,6 +52,7 @@ import ro.echocare.auth.AuthViewModel
 import ro.echocare.auth.Landing
 import ro.echocare.auth.Screen
 import ro.echocare.auth.toE164
+import ro.echocare.home.HomeNav
 import ro.echocare.ui.Kind
 import ro.echocare.ui.Rule
 import ro.echocare.ui.SnButton
@@ -73,24 +74,33 @@ class MainActivity : ComponentActivity() {
         setContent {
             val vm: AuthViewModel = hiltViewModel()
             EchoCareTheme {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    containerColor = Palette.Canvas
-                ) { innerPadding ->
-                    if (vm.screen == Screen.Landing) {
-                        Landing(vm::openSignIn, Modifier.padding(innerPadding))
-                        return@Scaffold
-                    }
-                    SignIn(
-                        vm,
-                        onSendCode = { sendCode(vm, it, null) },
-                        onResend = { sendCode(vm, vm.phone, vm.resendToken) },
-                        // The keyboard must not cover the code field or its button
-                        modifier = Modifier
-                            .padding(innerPadding)
-                            .consumeWindowInsets(innerPadding)
-                            .imePadding()
+                when (val screen = vm.screen) {
+                    // Signed in: the role's home and what opens from it (seniors §8.2).
+                    is Screen.Home -> HomeNav(
+                        screen,
+                        onSwitchRole = vm::switchRole,
+                        onSignOut = vm::signOut
                     )
+
+                    else -> Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        containerColor = Palette.Canvas
+                    ) { innerPadding ->
+                        if (screen == Screen.Landing) {
+                            Landing(vm::openSignIn, Modifier.padding(innerPadding))
+                            return@Scaffold
+                        }
+                        SignIn(
+                            vm,
+                            onSendCode = { sendCode(vm, it, null) },
+                            onResend = { sendCode(vm, vm.phone, vm.resendToken) },
+                            // The keyboard must not cover the code field or its button
+                            modifier = Modifier
+                                .padding(innerPadding)
+                                .consumeWindowInsets(innerPadding)
+                                .imePadding()
+                        )
+                    }
                 }
             }
         }
@@ -135,7 +145,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private val ROLE_LABELS = mapOf(
+internal val ROLE_LABELS = mapOf(
     "das" to R.string.role_das,
     "medic" to R.string.role_medic,
     "caregiver" to R.string.role_caregiver,
@@ -189,32 +199,7 @@ fun SignIn(
                             )
                         }
                     }
-                    // A placeholder: the screens of each role come later.
-                    is Screen.Home -> {
-                        Text(
-                            stringResource(
-                                R.string.home_signed_in,
-                                screen.displayName,
-                                stringResource(ROLE_LABELS.getValue(screen.role))
-                            ),
-                            color = Palette.Fg,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                        if (screen.canSwitch) {
-                            SnButton(
-                                stringResource(R.string.change_role),
-                                vm::switchRole,
-                                Modifier.fillMaxWidth()
-                            )
-                        }
-                        SnButton(
-                            stringResource(R.string.sign_out),
-                            vm::signOut,
-                            Modifier.fillMaxWidth(),
-                            kind = Kind.Outline
-                        )
-                    }
-                    // The landing is shown by MainActivity; Loading above.
+                    // The landing and the signed-in homes are shown by MainActivity; Loading above.
                     else -> {}
                 }
                 if (beforeSignIn) {
