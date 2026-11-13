@@ -1,10 +1,24 @@
-.gradle/
-.kotlin/
-build/
-# signing key paths and passwords (ADR-001 §2.1), and the SDK path
+*.iml
+.gradle
+/local.properties
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
 local.properties
+# Signed APKs written by Build → Generate Signed App Bundle or APK
+/app/debug/
+/app/release/
+/wear/debug/
+/wear/release/
+# The shared keystore lives in the team's password manager, never in Git (ADR-001 §2.1)
 *.jks
 *.keystore
-captures/
-.idea/*
-!.idea/codeStyles/
+# Android Studio: commit only settings the team shares; everything else is personal or re-derived from Gradle
+/.idea/*
+!/.idea/.name
+!/.idea/vcs.xml
+!/.idea/inspectionProfiles/
+!/.idea/codeStyles/
+!/.idea/runConfigurations/
