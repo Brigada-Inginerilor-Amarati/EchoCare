@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">EchoCare</string>
+    <string name="api_checking">API …</string>
+    <string name="api_ok">API ok (%1$s)</string>
+    <string name="api_unreachable">API unreachable: %1$s</string>
 </resources>
