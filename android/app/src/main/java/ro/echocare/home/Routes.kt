@@ -10,6 +10,18 @@ import ro.echocare.ui.Tone
 @Serializable
 data class SeniorsRoute(val role: String)
 
+/** The medic's home: the Monitorizare and Înregistrare tiles (UC-12, UC-01). */
+@Serializable
+data object MedicHomeRoute
+
+/** Monitorizare: the medic's patients by group (UC-12, 03 §7). */
+@Serializable
+data object MonitorRoute
+
+/** Înregistrare: „Pacient nou” and the unfinished drafts (UC-01). */
+@Serializable
+data object RegisterRoute
+
 /** One senior's page. */
 @Serializable
 data class SeniorRoute(val id: String)
@@ -22,12 +34,33 @@ data object OwnRoute
 @Serializable
 data object IncidentsRoute
 
+/** One incident's page (UC-11). */
+@Serializable
+data class IncidentRoute(val id: String)
+
+/** „Rezolvare caz” for the incident [id] (UC-11 step 4). */
+@Serializable
+data class ResolveRoute(val id: String)
+
+/** „Pacient nou”: the medic's form, empty, or filled from the senior [id] (seniors §9.1). */
+@Serializable
+data class EnrollRoute(val id: String? = null)
+
 /** Where [role] lands after sign-in. [role] is one of auth.ROLES. */
 fun homeFor(role: String): Any = when (role) {
-    "medic", "caregiver" -> SeniorsRoute(role)
+    "medic" -> MedicHomeRoute
+    "caregiver" -> SeniorsRoute(role)
     "senior" -> OwnRoute
     else -> IncidentsRoute
 }
+
+/**
+ * Where a tapped alert goes for the role the app is in (04 §6): DAS to the incident, otherwise to
+ * the senior's page. The API reaches that page by every grant the person holds, whichever role the
+ * app is in, so an alert about someone they care for opens in the DAS and senior roles too.
+ */
+fun alertRoute(seniorId: String, incidentId: String?, role: String): Any =
+    incidentId?.takeIf { role == "das" }?.let(::IncidentRoute) ?: SeniorRoute(seniorId)
 
 /**
  * The label of each enrollment state (05 §1). A state this build does not know has none and
@@ -73,12 +106,42 @@ val CODE_TONES = mapOf(
     "red" to Tone.Rosu
 )
 
+/** A transcript answer's question (05 §2) under the medic's transcript. Unknown: shown raw. */
+val ANSWER_FIELDS = mapOf(
+    "feeling" to R.string.answer_feeling,
+    "orientation" to R.string.answer_orientation,
+    "shelter" to R.string.answer_shelter,
+    "identity" to R.string.answer_identity,
+    "consent" to R.string.consent_label
+)
+
+/**
+ * A transcript answer's value (03 §3): the codes in Romanian. The days are Romanian already;
+ * a value this build does not know shows raw.
+ */
+val ANSWER_VALUES = mapOf(
+    "ok" to R.string.answer_ok,
+    "unwell" to R.string.answer_unwell,
+    "yes" to R.string.answer_yes,
+    "no" to R.string.answer_no,
+    "unknown" to R.string.answer_unknown
+)
+
 /** What started each call (05 §1), as the dashboard names it. Unknown: shown as it is. */
 val TRIGGER_LABELS = mapOf(
     "campaign" to R.string.trigger_campaign,
     "watch" to R.string.trigger_watch,
     "manual" to R.string.trigger_manual,
     "welcome" to R.string.trigger_welcome
+)
+
+/** The event behind an incident (05 §1), as the dashboard names it. Unknown: shown as it is. */
+val EVENT_LABELS = mapOf(
+    "sos_button" to R.string.event_sos_button,
+    "fall" to R.string.event_fall,
+    "high_pulse_at_rest" to R.string.event_high_pulse_at_rest,
+    "inactivity" to R.string.event_inactivity,
+    "manual_request" to R.string.event_manual_request
 )
 
 /** A call's state (05 §1), for a call with no final code yet. Unknown: shown as it is. */

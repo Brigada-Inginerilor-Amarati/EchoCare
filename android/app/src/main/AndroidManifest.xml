@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Alerts (04 §6), asked for on the home of a role that receives them -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Last known location is attached to events when the senior allowed it (UC-09 §5, 04 §3) -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- The senior's phone relays the watch (G5); asked for on her home so it isn't put to sleep -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:name=".EchoCareApp"
@@ -16,6 +23,9 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.EchoCare"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -23,6 +33,35 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Watch → phone Data Layer relay (04 §3, UC-09, UC-13) -->
+        <service
+            android:name=".push.WearListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/echocare/"
+                    android:scheme="wear" />
+            </intent-filter>
+        </service>
+
+        <!-- Firebase push (04 §6) -->
+        <service
+            android:name=".push.MessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- What the tray uses for an alert that arrives while the app is closed -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="alerts" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
     </application>
 
 </manifest>

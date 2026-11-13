@@ -17,7 +17,7 @@ import ro.echocare.SeniorRow
 @HiltViewModel
 class SeniorsViewModel @Inject constructor(private val api: EchoCareApi, saved: SavedStateHandle) :
     ViewModel() {
-    val role = saved.toRoute<SeniorsRoute>().role
+    private val role = saved.toRoute<SeniorsRoute>().role
 
     var seniors by mutableStateOf<Load<List<SeniorRow>>>(Load.Loading)
         private set

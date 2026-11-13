@@ -2,7 +2,7 @@ package ro.echocare.auth
 
 import ro.echocare.Me
 
-/** The roles this build has screens for, in GET /profile's order (auth-layer §3.3). */
+/** The roles this build has screens for, in GET /me's order (auth-layer §3.3). */
 val ROLES = listOf("das", "medic", "caregiver", "senior")
 
 /** What the sign-in flow shows (auth-layer §8.2). [error] is a string resource id. */
@@ -26,7 +26,7 @@ sealed interface Screen {
 }
 
 /**
- * The screen after GET /profile answers 200 (auth-layer §8.2). [saved] is the role picked earlier.
+ * The screen after GET /me answers 200 (auth-layer §8.2). [saved] is the role picked earlier.
  * Roles this build does not know are dropped (app/AGENTS.md: decode leniently); AL3 counts distinct roles.
  */
 fun screenFor(me: Me, saved: String?): Screen {
@@ -40,8 +40,8 @@ fun screenFor(me: Me, saved: String?): Screen {
 }
 
 /**
- * The screen after GET /profile fails with HTTP [status] (auth-layer §3.2). A 401 arrives only after the
- * Authenticator's retry, so it means sign in again. /profile refuses with 403 only for `not_registered`.
+ * The screen after GET /me fails with HTTP [status] (auth-layer §3.2). A 401 arrives only after the
+ * Authenticator's retry, so it means sign in again. /me refuses with 403 only for `not_registered`.
  */
 fun screenFor(status: Int): Screen = when (status) {
     401 -> Screen.Phone()

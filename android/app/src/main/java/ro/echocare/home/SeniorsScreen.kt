@@ -29,14 +29,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import ro.echocare.R
 import ro.echocare.SeniorRow
+import ro.echocare.push.NotificationsPrompt
 import ro.echocare.ui.Chip
 import ro.echocare.ui.PhoneNumber
 import ro.echocare.ui.Tone
 import ro.echocare.ui.theme.Palette
 
 /**
- * The seniors of the route's role as cards: the caregiver's home and, for now, the medic's too
- * (seniors §8.2, SE20).
+ * The caregiver's home: their seniors as cards (seniors §8.2, SE20). The medic
+ * has their own home now (MedicHome.kt, UC-12).
  */
 @Composable
 fun SeniorsScreen(
@@ -46,9 +47,10 @@ fun SeniorsScreen(
     vm: SeniorsViewModel = hiltViewModel()
 ) {
     RereadWhileShown(vm::reread)
-    val title = if (vm.role == "medic") R.string.medic_home else R.string.caregiver_home
-    HomeScaffold(stringResource(title), onBack = null, menu = menu) {
+    HomeScaffold(stringResource(R.string.caregiver_home), onBack = null, menu = menu) {
         LoadBody(vm.seniors, onRetry = vm::reread, onSessionEnd = onSessionEnd) { seniors ->
+            // The caregiver's alerts (04 §6), asked for where they land
+            NotificationsPrompt()
             if (seniors.isEmpty()) {
                 Message(stringResource(R.string.no_seniors))
             } else {

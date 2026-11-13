@@ -3,6 +3,7 @@ package ro.echocare
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -10,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import java.io.IOException
 import java.util.concurrent.ExecutionException
 import javax.inject.Singleton
+import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -32,11 +34,19 @@ object FirebaseModule {
             firebaseAuthSettings.forceRecaptchaFlowForTesting(true)
         }
     }
+
+    /** This device's push token (04 §6). */
+    @Provides
+    @Singleton
+    fun firebaseMessaging(): FirebaseMessaging = FirebaseMessaging.getInstance()
 }
 
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+    // An old APK will talk to a newer API: ignore fields this build does not know (ADR-001 §2.3).
+    private val json = Json { ignoreUnknownKeys = true }
+
     // ponytail: OkHttp and Retrofit are built here, not provided, until a second API needs them.
     @Provides
     @Singleton

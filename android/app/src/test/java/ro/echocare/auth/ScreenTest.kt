@@ -5,7 +5,7 @@ import org.junit.Test
 import ro.echocare.Grant
 import ro.echocare.Me
 
-// auth-layer §8.2: what the app does with each answer from /profile.
+// auth-layer §8.2: what the app does with each answer from /me.
 class ScreenTest {
     private fun me(vararg roles: String) = Me("Ana Pop", roles.map(::Grant))
 
