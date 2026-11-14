@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "ro",
   "strings" : {
+    "" : {
+
+    },
     "a_dispatcher" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -903,6 +906,39 @@
         }
       }
     },
+    "device_app_never" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pacientul nu a deschis aplicația"
+          }
+        }
+      }
+    },
+    "device_node_never" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzor din casă înregistrat, nu a trimis date"
+          }
+        }
+      }
+    },
+    "device_watch_never" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ceas înregistrat, nu a trimis date"
+          }
+        }
+      }
+    },
     "do_continue" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -965,6 +1001,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Editează datele"
+          }
+        }
+      }
+    },
+    "equipment_home_node" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzor din casă"
+          }
+        }
+      }
+    },
+    "equipment_landline" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un telefon fix nu poate avea aplicația."
+          }
+        }
+      }
+    },
+    "equipment_smartphone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Telefon cu aplicația EchoCare"
+          }
+        }
+      }
+    },
+    "equipment_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Echipamente"
+          }
+        }
+      }
+    },
+    "equipment_unstated" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nespecificat"
+          }
+        }
+      }
+    },
+    "equipment_watch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ceas"
           }
         }
       }
@@ -3539,6 +3641,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Campanie"
+          }
+        }
+      }
+    },
+    "trigger_home_node" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ro" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senzor din casă"
           }
         }
       }
