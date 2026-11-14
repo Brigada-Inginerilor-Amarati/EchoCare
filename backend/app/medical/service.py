@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from functools import cache
 
 from pydantic_ai.models import Model
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import Role
@@ -171,6 +171,21 @@ async def record_for(
         return None
     registering = Role.medic in caller.roles and senior.medic_id == caller.user.id
     return await view_of(record, storage, full=registering)
+
+
+async def record_states(
+    session: AsyncSession, caller: Caller
+) -> dict[uuid.UUID, MedicalRecordState]:
+    """The state of each record of a senior this caller registered, for the medic home's
+    tasks on GET /seniors rows (04 §1, design 2026-11-13). Nobody else's, as on the record."""
+    if Role.medic not in caller.roles:
+        return {}
+    rows = await session.execute(
+        select(MedicalRecord.senior_id, MedicalRecord.state)
+        .join(Senior, Senior.id == MedicalRecord.senior_id)
+        .where(Senior.medic_id == caller.user.id)
+    )
+    return dict(rows.tuples().all())
 
 
 async def analyzable_record(
@@ -389,3 +404,21 @@ async def stop_analyses() -> None:
     for task in tasks:
         task.cancel()
     await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def record_key(session: AsyncSession, senior_id: uuid.UUID) -> str | None:
+    """Where the senior's medical record PDF is stored, if they have one."""
+    return await session.scalar(
+        select(MedicalRecord.storage_key).where(MedicalRecord.senior_id == senior_id)
+    )
+
+
+async def erase_record(session: AsyncSession, senior_id: uuid.UUID) -> str | None:
+    """Deletes the senior's medical record row and returns its PDF's key, for the
+    caller to delete from the file store after the commit (design 2026-11-14).
+    Doesn't commit (ADR-005)."""
+    return await session.scalar(
+        delete(MedicalRecord)
+        .where(MedicalRecord.senior_id == senior_id)
+        .returning(MedicalRecord.storage_key)
+    )
