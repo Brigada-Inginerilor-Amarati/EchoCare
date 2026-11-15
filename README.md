@@ -1,6 +1,6 @@
 # EchoCare
 
-EchoCare checks on seniors living alone with automated phone calls, a Wear OS watch and an Android app, and hands emergencies to a dispatch team (DAS) through a web dashboard. The design is in [docs/specs/echocare](docs/specs/echocare/README.md); how the repository is built and delivered is in [ADR-001](docs/adr/ADR-001-monorepo-and-delivery.md).
+EchoCare checks on seniors living alone with automated phone calls in Romanian, a smartwatch, a phone app and a home node, and hands emergencies to a dispatch team (DAS) through a web dashboard. The design is in [docs/specs/echocare](docs/specs/echocare/README.md); how the repository is built and delivered is in [ADR-001](docs/adr/ADR-001-monorepo-and-delivery.md).
 
 | Folder | What | Setup and commands |
 |---|---|---|
@@ -8,6 +8,7 @@ EchoCare checks on seniors living alone with automated phone calls, a Wear OS wa
 | [dashboard/](dashboard/) | DAS web dashboard, Svelte 5 + SvelteKit 3, served by Caddy | [dashboard/README.md](dashboard/README.md) |
 | [android/](android/) | Android app (four roles) and Wear OS app, one Gradle build | [android/README.md](android/README.md) |
 | [ios/](ios/) | iPhone, iPad and Apple Watch apps for the demo only, SwiftUI, Xcode ([ADR-007](docs/adr/ADR-007-ios-demo-clients.md)) | [ios/README.md](ios/README.md) |
+| [ecou/](ecou/) | Ecou, the home node as a small robot on an Arduino UNO Q, for the hackathon ([08-ecou.md](docs/specs/echocare/08-ecou.md)) | [ecou/README.md](ecou/README.md) |
 | [.railway/](.railway/) | Railway infrastructure as code for staging and production | [.railway/README.md](.railway/README.md) |
 | [docs/](docs/) | Specification and architecture decisions | |
 
@@ -18,6 +19,8 @@ EchoCare checks on seniors living alone with automated phone calls, a Wear OS wa
 | Docker Desktop (Compose v2.24+) | The whole local environment | [docker.com](https://www.docker.com/products/docker-desktop/) |
 | Android Studio | The Android and Wear OS apps | [developer.android.com/studio](https://developer.android.com/studio) |
 | Android CLI (`android`) | Emulators, installing and inspecting the apps from the terminal; agent skills | [developer.android.com/tools/agents](https://developer.android.com/tools/agents) |
+| Xcode | The iPhone, iPad and Apple Watch apps | Mac App Store |
+| Arduino App Lab | Ecou, on the UNO Q | [arduino.cc](https://www.arduino.cc/) |
 | uv | Backend development outside Docker (IDE, pytest, ruff) | `brew install uv` |
 | Node.js 26 + npm | Dashboard development outside Docker; `.railway/` | `brew install node` |
 | Railway CLI | Applying `.railway/`, logs, SSH into deployments | `brew install railway` |
@@ -72,7 +75,7 @@ docker compose down -v
 ## How changes ship
 
 ```
-pull request → CI (backend.yml, dashboard.yml, android.yml) → merge to main → Railway staging
+pull request → CI (backend.yml, dashboard.yml, android.yml, ios.yml) → merge to main → Railway staging
 PR main → release, merged with a merge commit → Railway production
 ```
 
@@ -93,11 +96,11 @@ lefthook install
 |---|---|---|
 | `backend/` | `ruff check --fix`, `ruff format`, `pytest` | |
 | `dashboard/` | `vp check --fix`: format, lint, type check | |
-| `ios/Shared/` | `swift test` | |
+| `ios/` | `swift format`, `swift format lint`, `swift test` for `Shared` | The same lint and tests, then `xcodebuild` builds of the iOS and watchOS apps |
 | `android/` | `ktlintFormat` | `ktlintCheck lint testDebugUnitTest :shared:test` |
 
 - **Formatters fix and restage** the files you commit. A lint error, type error or failing test stops the commit.
-- **Each hook needs its folder's toolchain:** uv for `backend/`, `npm ci` in `dashboard/`, the Android SDK for `android/`.
+- **Each hook needs its folder's toolchain:** uv for `backend/`, `npm ci` in `dashboard/`, the Android SDK for `android/`, Xcode for `ios/`.
 - **Committing part of a file:** the unstaged lines are kept, but when a formatter changes the staged ones they can come back a few lines off. Check `git diff` afterwards.
 - **Skipping:** `git commit --no-verify` or `LEFTHOOK=0`. CI still runs the same checks.
 - **Git GUIs** (Android Studio, VS Code) may run hooks without Homebrew on the `PATH`. Create `lefthook-local.yml` (not committed) with `rc: ~/.lefthookrc`, and put `export PATH="/opt/homebrew/bin:$PATH"` in `~/.lefthookrc`.
@@ -110,7 +113,8 @@ Each folder has an `AGENTS.md` (layout, scope, commands, rules), which the `CLAU
 |---|---|
 | [.claude/settings.json](.claude/settings.json) | Shared plugins and their marketplaces; a hook that refuses edits to migrations already on `main`; asks before Railway changes and `docker compose down -v` |
 | [.mcp.json](.mcp.json) | The Railway MCP server, signed in through your own `railway login`; Playwright, for driving the dashboard in a browser |
-| [.claude/skills/](.claude/skills/) | `use-railway` and `archify` (diagrams; needs Node) |
+| [.claude/skills/](.claude/skills/) | `contract-change` (an endpoint, the spec and its clients in one change) and `new-migration` |
+| [.claude/agents/](.claude/agents/) | `compat-reviewer` (changes that break installed apps) and `spec-reviewer` (a diff against the spec) |
 
 On the first session in this folder, Claude Code asks you to trust the marketplaces, install the plugins and approve the MCP server. To turn a shared plugin off for yourself only, set it to `false` in `.claude/settings.local.json`, which is not committed:
 
