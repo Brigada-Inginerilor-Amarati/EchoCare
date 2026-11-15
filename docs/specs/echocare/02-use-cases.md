@@ -45,6 +45,7 @@ flowchart LR
         UC09("UC-09 Watch anomaly starts a call")
         UC10("UC-10 Senior asks to be checked on")
         UC16("UC-16 Home node starts a call")
+        UC17("UC-17 Ecou finds someone on the floor")
     end
 
     subgraph FOLLOW["Following and responding"]
@@ -160,7 +161,7 @@ A DAS employee's phone number is also their hand-over number when they are on du
 | Before | The medic is signed in |
 | After | A senior exists in state `submitted`, with caregiver grants, waiting for DAS |
 
-1. The medic enters the senior's name, form of address („doamna Maria”), phone number and preferred call window. Whether the number is a landline is worked out from the number itself.
+1. The medic enters the senior's name, form of address („doamna Maria”), phone number and preferred call window. Whether the number is a landline is worked out from the number itself. Under „Echipamente” the medic ticks what the senior uses: „Telefon cu aplicația EchoCare”, „Ceas”, „Senzor din casă”. The phone means the EchoCare app on the senior's own phone; an old phone that cannot install apps is not ticked, and that senior only takes the calls. A watch or a home node ticks the phone too, as both talk only to it, and a landline cannot have it. Nothing ticked is a complete answer (design 2026-11-15).
 2. The medic enters the address with access details: street and number, block, staircase, floor, apartment, intercom code, who has a key, and a landmark (G13).
 3. The medic enters one or two caregivers: name, relation, phone number. Each number becomes a caregiver grant for this senior. If the senior's own number is a mobile, it becomes the senior's grant.
 4. If a caregiver is present, they sign in on the spot (UC-02); seeing doamna Maria on their phone confirms the number. Otherwise FastAPI sends a short notice SMS to the number **(proposed)**, so that a wrong number is noticed.
@@ -568,6 +569,10 @@ Variations:
 
 The node never places a call and never reaches the internet. It tells the phone app, the phone app tells FastAPI, and FastAPI decides.
 
+### UC-17 Ecou finds someone on the floor
+
+**(P24, proposed)** With Ecou, the home node built as a robot ([08-ecou.md](08-ecou.md)): when it has lost track of everyone for the search delay, it sweeps the floor; an object lying still for the lying hold time makes it ask „BINE?” with a countdown. A wave cancels; a palm or no answer sends a `fall` with the sweep, which queues a yellow call with trigger `home_node`, and DAS sees where on a map. Steps, variations and the sequence diagram are in [08-ecou.md](08-ecou.md) §4.
+
 ## 5. Following and responding
 
 ### UC-11 Handle a red incident
@@ -627,5 +632,6 @@ Open Android screens update when a refresh arrives, with a slow timed re-read as
 2. The caregiver and the medic see a device warning beside the senior. There is no alert and the code does not change.
 3. The next normal check-in sets the state back to `ok`.
 4. A home node with no room reading past its silence limit is marked `offline` the same way, and the next reading sets it back to `ok`. An offline node's last reading is not used on calls (P22).
+5. A device declared at registration (UC-01) that has never reported gets the same kind of device warning: „Ceas înregistrat, nu a trimis date”, „Senzor din casă înregistrat, nu a trimis date”, and, for the phone, „Pacientul nu a deschis aplicația” until the senior's own number first signs in. It shows once the senior is `accepted` or `active`, to the medic, the caregivers and DAS, never to the senior. A device not declared shows nothing; a senior whose equipment is not stated shows the watch as before (design 2026-11-15).
 
 A silent watch or node is not evidence about the senior; it is evidence about the device. Weather campaigns still reach that senior by phone.

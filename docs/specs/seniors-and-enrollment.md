@@ -2,7 +2,7 @@
 
 **Status:** approved design · 2026-11-14 · branch `auth-layer`
 **Issues:** #16 (parent), #17, #18, #19, #21.
-**Implements:** UC-01 (register a senior), UC-04 step 1 (accept; the welcome call it queues came later, with [the campaigns and mock calls design](../superpowers/specs/2026-10-17-campaigns-and-mock-calls-design.md)), UC-14 (the „Personal” screen), the per-role homes of UC-02 and UC-12 on Android, [auth-layer.md](auth-layer.md) §3.6 and the seniors and staff rows of its §10, [04 §1 and §2](echocare/04-interfaces.md).
+**Implements:** UC-01 (register a senior), UC-04 step 1 (accept; the welcome call it queues came later, with [the campaigns and mock calls design](../superpowers/specs/2026-11-15-campaigns-and-mock-calls-design.md)), UC-14 (the „Personal” screen), the per-role homes of UC-02 and UC-12 on Android, [auth-layer.md](auth-layer.md) §3.6 and the seniors and staff rows of its §10, [04 §1 and §2](echocare/04-interfaces.md).
 **Read with:** the system spec in [echocare/](echocare/README.md) and [auth-layer.md](auth-layer.md). Where either disagrees with this file about the endpoints defined here, this file wins, and slice 1 brings them in line (§6.6).
 
 **Since the merge with `main` (2026-11-14):** the backend follows `main`'s domain packages (`app/seniors/`, `app/staff/`, `app/auth/`), and for the commands [04 §2](echocare/04-interfaces.md) wins over this file. That replaces SE4 (submitting also needs a caregiver), SE13 (a repeat is `already_done`) and SE16 (the routes are in `app/seniors/router.py`). SE9 and SE10 are in force again (CRUD completion, 2026-11-14): the registering medic and DAS edit a registration and its caregivers in any state, and a second senior on one mobile is refused with `phone_taken`. `missing_fields` is `incomplete` with `missing`, removing a caregiver twice answers 204, the list is by name, and submit and accept answer one row. The reads are as written here: `?role=` (SE6), the row with its number, and one page with the medic for every role (SE7).
@@ -644,11 +644,11 @@ Each slice is one folder, so a red Android build never holds back an API deploy 
 | Item | Belongs to |
 |---|---|
 | The notice SMS to a new caregiver | Spike S10 |
-| `code`, `reason` and `since` on `GET /seniors` and `GET /seniors/{id}` | Built by [the campaigns and mock calls design](../superpowers/specs/2026-10-17-campaigns-and-mock-calls-design.md): null until the first result and for any senior who is not `active` |
+| `code`, `reason` and `since` on `GET /seniors` and `GET /seniors/{id}` | Built by [the campaigns and mock calls design](../superpowers/specs/2026-11-15-campaigns-and-mock-calls-design.md): null until the first result and for any senior who is not `active` |
 | The calls, consent, watch and home node fields on the senior reads | Their features; each is an optional addition |
 | The Twilio welcome call, its retries, and the states `wrong_number` and `unreachable` | UC-04. Accept already queues the welcome call, and the mock card in the senior's app answers it until then, making the senior `active` or `refused` |
 | „Cereri de înrolare” and the senior screens on the dashboard, where DAS would use its edit right | The dashboard work |
-| On duty: `PUT /staff/on-duty`, the flag in `GET /staff` | Built by [the CRUD completion](../superpowers/specs/2026-10-16-crud-completion-design.md) |
+| On duty: `PUT /staff/on-duty`, the flag in `GET /staff` | Built by [the CRUD completion](../superpowers/specs/2026-11-15-crud-completion-design.md) |
 | A refresh push when a caregiver is added or removed | The push work (G4) |
 | The signature on the tablet | Optional (G7) |
 | Red incidents in the Android DAS role | UC-11 |

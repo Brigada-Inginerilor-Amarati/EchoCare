@@ -1,9 +1,9 @@
 # ADR-005: The backend becomes a modular monolith by table ownership, not by separate schemas
 
-**Status:** Accepted, 2026-11-14; built on branch `modular-monolith` ([design](../superpowers/specs/2026-10-21-modular-monolith-design.md))
+**Status:** Accepted, 2026-11-15; built on branch `modular-monolith` ([design](../superpowers/specs/2026-11-15-modular-monolith-design.md))
 **Date:** 2026-11-14
 **Deciders:** the team of four (backend owner first: every change lands on `api`)
-**Builds on:** 01 §8 and §10, [ADR-004](ADR-004-api-runtime-and-add-ons.md) ("to revisit"), [backend layers design](../superpowers/specs/2026-10-16-backend-layers-and-schemas-design.md) §6
+**Builds on:** 01 §8 and §10, [ADR-004](ADR-004-api-runtime-and-add-ons.md) ("to revisit"), [backend layers design](../superpowers/specs/2026-11-15-backend-layers-and-schemas-design.md) §6
 
 ## Context
 
@@ -175,7 +175,7 @@ What matters is *where a row's rules live*, not *who can see the row*. Problems 
 
 ## Action items
 
-Done on branch `modular-monolith`, one commit per step ([plan](../superpowers/plans/2026-10-21-modular-monolith.md)). Each step was checked with `lint-imports`, `pytest` (which runs `alembic check`), and, at the end, a byte-for-byte comparison of `/api/openapi.json`.
+Done on branch `modular-monolith`, one commit per step ([plan](../superpowers/plans/2026-11-15-modular-monolith.md)). Each step was checked with `lint-imports`, `pytest` (which runs `alembic check`), and, at the end, a byte-for-byte comparison of `/api/openapi.json`.
 
 1. [x] The foreign-write test, starting from the 16 (module, table) pairs of the write map; each step below removed its pairs.
 2. [x] Group D: `staff` folded into `auth`; `seniors` writes grants through `auth`.

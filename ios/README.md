@@ -2,7 +2,7 @@
 
 One Xcode project that produces two apps: the iPhone and iPad app for the senior, caregiver, medic and DAS roles (spec G3, G15), and the watchOS app for the senior's watch (G5), embedded in it. Swift 6, SwiftUI, Xcode 27.2. It is a port of [android/](../android/) for a demo on Apple devices, signed with a free Personal Team and installed from a Mac, never through the App Store or TestFlight ([ADR-007](../docs/adr/ADR-007-ios-demo-clients.md)). Agents: [AGENTS.md](AGENTS.md).
 
-This is the skeleton: the app configures Firebase and shows a placeholder, and the watch app shows one screen. The screens arrive task by task in the [iOS port plan](../docs/superpowers/plans/2026-11-14-ios-port.md); see [What is not built yet](#what-is-not-built-yet).
+This is the skeleton: the app configures Firebase and shows a placeholder, and the watch app shows one screen. The screens arrive task by task in the [iOS port plan](../docs/superpowers/plans/2026-11-15-ios-port.md); see [What is not built yet](#what-is-not-built-yet).
 
 | Part | What | Becomes |
 |---|---|---|
