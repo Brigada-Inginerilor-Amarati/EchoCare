@@ -69,6 +69,7 @@ erDiagram
         string key_holder
         string landmark
         string call_window "collected, unused in MVP"
+        string_array equipment "smartphone, watch, home_node; null = not stated"
         string enrollment_state "draft, submitted, accepted, active, refused, wrong_number, unreachable, withdrawn"
         datetime submitted_at "the medic's submit; empty for a draft"
         datetime accepted_at "DAS's accept; empty before it"
@@ -135,6 +136,7 @@ erDiagram
         float temperature_c
         float humidity_pct
         datetime last_motion_at
+        float forecast_60m_c "the node's prediction, P26"
         datetime out_of_range_since "empty while in range"
         boolean out_of_range_event_sent "one room event per stretch"
     }
@@ -261,8 +263,8 @@ erDiagram
 | Grant | One role for one user, and for caregiver and senior grants the senior it applies to. A user may hold several. Replaces the earlier role field, caregiver link and invite |
 | Senior | The enrolled person, registration details, structured address and enrollment state |
 | Consent | Every consent decision as a history: given or refused on the welcome call (or on the mock card in the senior's app, method `app`), an optional signature, a withdrawal recorded by the medic or DAS. For method `call`, `evidence` holds what decided it: `{"digits": "1"}` for a key, or `{"speech": "Da.", "confidence": 0.91}` for words (#48) |
-| SeniorSummary | One version of what the summary agent knows about a senior, written after each answered call from that call and the version before it. Never updated or deleted by the app; the newest is the latest (design `2026-11-14-senior-summary-agents` §4) |
-| MedicalRecord | A senior's medical record PDF and the check questions drawn from it, one current row per senior; a new upload replaces its content and resets `state` (`pending`, `review`, `confirmed`, `failed`). `items` is a JSONB list of `{condition, question, worrying, evidence, included}`; `source_text` is the extracted text, kept for re-analysis and never logged or served (design `2026-11-14-medical-record-profile` §5.1) |
+| SeniorSummary | One version of what the summary agent knows about a senior, written after each answered call from that call and the version before it. Never updated or deleted by the app; the newest is the latest (design `2026-11-15-senior-summary-agents` §4) |
+| MedicalRecord | A senior's medical record PDF and the check questions drawn from it, one current row per senior; a new upload replaces its content and resets `state` (`pending`, `review`, `confirmed`, `failed`). `items` is a JSONB list of `{condition, question, worrying, evidence, included}`; `source_text` is the extracted text, kept for re-analysis and never logged or served (design `2026-11-15-medical-record-profile` §5.1) |
 | WatchState | The watch's latest check-in, one row per senior |
 | WatchReading | One check-in, kept 24 hours for the dashboard's pulse line (ADR-006) |
 | HealthReading | One Apple Health blood oxygen or ECG sample relayed by the senior's iPhone, kept 24 hours for the dashboard's watch card (ADR-008). The key is the senior and the HealthKit sample's UUID, so a re-sent sample is kept once and a phone moved between seniors gives each its own copy |
@@ -336,6 +338,8 @@ Several rules from the other files are enforced by the database itself, so they 
 | Apple Health readings (SpO2, ECG) | 24 hours (ADR-008) | Data minimisation |
 | Room readings | Latest only | Data minimisation |
 | Grants | Removed when revoked | A removed caregiver loses access at once |
+
+**Declared equipment** (design 2026-11-15). `seniors.equipment` holds what the medic ticked at registration (UC-01): `smartphone` (the EchoCare app on the senior's own phone, not merely a mobile), `watch` and `home_node`, in that order. `[]` means the senior only takes calls. `null` means not stated, for seniors registered before the field existed, and every screen treats it as before. An edit that leaves it out or sends null keeps it, so a senior never goes back to `null`.
 
 **Erasure** (GDPR Art. 17, design 2026-11-14). `POST /seniors/{id}/erase` ([04-interfaces.md](04-interfaces.md) §2) deletes the senior and every row about them in one transaction, each table through its owner (ADR-005), children first: status reports and the code, events and incidents, consents, summaries and watch data (check-ins and Apple Health readings), calls with their turns and answers, the medical record, the senior, and the users of the senior and caregivers left with no grant, unless another row still names them (a former medic or DAS employee). The medical record's PDF is deleted from the file store after the commit. In our database and file store, only a log line with the senior's id and who erased it remains. Outside our database and file store, Twilio's call logs (numbers and times), database backups until they rotate, and the Firebase sign-in account (auth-layer AL11) are not touched; a pilot needs a retention setting or a deletion request for each. It is refused while a call is live or an incident unresolved.
 
