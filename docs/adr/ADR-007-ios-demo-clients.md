@@ -1,8 +1,8 @@
 # ADR-007: Demo-only iOS and watchOS clients, signed from one Mac
 
-**Status:** Accepted, 2026-11-14; built on branch `ios-port` ([design](../superpowers/specs/2026-11-14-ios-port-design.md))
+**Status:** Accepted, 2026-11-15; built on branch `ios-port` ([design](../superpowers/specs/2026-11-15-ios-port-design.md))
 **Date:** 2026-11-14
-**Deciders:** Paul picked approach A, a plain Swift port ([design, Approaches considered](../superpowers/specs/2026-11-14-ios-port-design.md#approaches-considered)); the team settled on Alex's Mac as the one signer, as Paul's watch never offered to trust a Mac ([design, The demo setup](../superpowers/specs/2026-11-14-ios-port-design.md#the-demo-setup))
+**Deciders:** Paul picked approach A, a plain Swift port ([design, Approaches considered](../superpowers/specs/2026-11-15-ios-port-design.md#approaches-considered)); the team settled on Alex's Mac as the one signer, as Paul's watch never offered to trust a Mac ([design, The demo setup](../superpowers/specs/2026-11-15-ios-port-design.md#the-demo-setup))
 **Builds on:** [ADR-001](ADR-001-monorepo-and-delivery.md) (one native toolchain per folder), [01-architecture.md](../specs/echocare/01-architecture.md) (G5, the watch talks only to the phone)
 
 ## Context
@@ -18,7 +18,7 @@ We tried installing on a real Apple Watch. A free Apple ID (an Xcode "Personal T
 3. **The watch never calls FastAPI** (G5). WatchConnectivity relays its events and check-ins through the phone (04 §3 messages), which is signed in as the senior.
 4. **Monitoring runs inside an `HKWorkoutSession`.** watchOS suspends an app soon after the wrist drops; a running workout session keeps heart-rate and accelerometer samples coming.
 
-The evidence is the 2026-11-14 spike: HealthKit works on a free team, heart rate arrives about every 5 s, the accelerometer runs at 50 Hz with the wrist down, `startWatchApp` starts the watch app from the phone, and `sendMessage` wakes a terminated iPhone app. The table is in the [design](../superpowers/specs/2026-11-14-ios-port-design.md#spike-results-2026-11-14).
+The evidence is the 2026-11-15 spike: HealthKit works on a free team, heart rate arrives about every 5 s, the accelerometer runs at 50 Hz with the wrist down, `startWatchApp` starts the watch app from the phone, and `sendMessage` wakes a terminated iPhone app. The table is in the [design](../superpowers/specs/2026-11-15-ios-port-design.md#spike-results-2026-11-15).
 
 ## Consequences
 

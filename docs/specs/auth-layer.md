@@ -481,13 +481,13 @@ Steps marked *person* are done by a team member; agents leave cloud environments
 
 | Item | Belongs to |
 |---|---|
-| Push tokens: `PUT/DELETE /profile/push-tokens/{token}`, the `push_tokens` table, the FCM dependency on Android | The endpoints and the table are built by [the CRUD completion](../superpowers/specs/2026-10-16-crud-completion-design.md); the FCM dependency is the push work (G4) |
+| Push tokens: `PUT/DELETE /profile/push-tokens/{token}`, the `push_tokens` table, the FCM dependency on Android | The endpoints and the table are built by [the CRUD completion](../superpowers/specs/2026-11-15-crud-completion-design.md); the FCM dependency is the push work (G4) |
 | `GET /staff` and the dashboard's „Personal” screen | Built by [seniors-and-enrollment.md](seniors-and-enrollment.md) |
-| On duty: `PUT /staff/on-duty` and the flag in `GET /staff` | Built by [the CRUD completion](../superpowers/specs/2026-10-16-crud-completion-design.md) |
+| On duty: `PUT /staff/on-duty` and the flag in `GET /staff` | Built by [the CRUD completion](../superpowers/specs/2026-11-15-crud-completion-design.md) |
 | Twilio request signatures on callbacks and the WebSocket | The Twilio work (spike S1, `PUBLIC_BASE_URL`) |
 | The `seniors` table; `seniors.medic_id`; the FK on `grants.senior_id`; the partial unique index for AL7 | Built with the data model, in migration `741f75a7dbe1` |
 | The senior-scoped helper for §3.6; `/profile`'s senior names | Built by [seniors-and-enrollment.md](seniors-and-enrollment.md) |
-| `warning_active` on `/profile` | Built by [the campaigns and mock calls design](../superpowers/specs/2026-10-17-campaigns-and-mock-calls-design.md) (UC-05) |
+| `warning_active` on `/profile` | Built by [the campaigns and mock calls design](../superpowers/specs/2026-11-15-campaigns-and-mock-calls-design.md) (UC-05) |
 | App Check, rate limits | Before a pilot |
 
 ## 11. Facts still to confirm
